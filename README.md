@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# infiniteMDBoard
+
+Infinite canvas markdown board — create, organize, and connect markdown notes and images on an infinite zoomable canvas.
+
+## Features
+
+- **Text blocks** with full Markdown support (GFM: tables, checkboxes, code blocks)
+- **Image blocks** (URL or drag-and-drop from OS, drop on existing image block to replace)
+- **Link preview blocks** (paste URL → auto-fetches title, description, favicon, OG image)
+- **Sticky notes** (colored notes: yellow, pink, green, blue, purple)
+- **Frames** — named sections that group and move child blocks together
+- **Arrow connections** between blocks with editable labels and connection types (arrow, bidirectional, blocker)
+- **Embed mode** on link blocks — toggle between preview card and iframe (YouTube/Vimeo auto-detect)
+- **Block search** (Cmd+F) — live filtering with jump-to-block
+- **Minimap** — overview panel with click-to-navigate
+- **Block drag** via left-side grip handle or Spacebar+click anywhere on block
+- **Editable project name** on canvas (click to rename)
+- **Infinite canvas** with pan & zoom:
+  - Ctrl+scroll / trackpad pinch = zoom
+  - Scroll / trackpad two-finger = pan
+  - Double-click empty space = zoom in
+  - Floating +/−/Fit All controls
+- **Multiple projects** with auto-save (localStorage)
+- **JSON export/import** (single project or all)
+- **Undo/Redo** (Ctrl+Z / Ctrl+Shift+Z)
+- **Dark/Light theme**
+
+## Tech Stack
+
+Next.js 16 | React 19 | TypeScript | Zustand 5 | Tailwind CSS 4 | react-markdown | zundo
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+vercel
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/            # Next.js App Router pages
+├── features/       # Feature modules
+│   ├── blocks/     # Text & image block components
+│   ├── canvas/     # Canvas, camera hooks, zoom controls
+│   ├── connections/# SVG arrow rendering
+│   ├── projects/   # Dashboard & project cards
+│   └── toolbar/    # Top toolbar
+├── stores/         # Zustand stores (canvas, project, ui)
+├── lib/            # Utilities (logger, geometry, storage, id)
+└── types/          # Shared TypeScript types
+```
