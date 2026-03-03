@@ -83,6 +83,17 @@ export function BlockRenderer({ block }: BlockRendererProps) {
     }
   };
 
+  // Capture-phase handler: space+drag works on all blocks even if inner elements stop propagation
+  const handleMouseDownCapture = (e: React.MouseEvent) => {
+    if (activeTool === "select" && isSpaceHeld()) {
+      e.stopPropagation();
+      e.preventDefault();
+      setSelectedBlock(block.id);
+      setEditingBlock(null);
+      setDraggingBlock(block.id);
+    }
+  };
+
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -105,6 +116,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         zIndex: block.type === "frame" ? 0 : block.zIndex,
       }}
       onMouseDown={handleMouseDown}
+      onMouseDownCapture={handleMouseDownCapture}
     >
       {/* Title input */}
       <input
@@ -133,7 +145,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             onClick={(e) => {
               e.stopPropagation();
               if (block.type === "text") {
-                updateBlock(block.id, { width: 250, height: 0 });
+                const lines = block.content.split("\n");
+                const maxLineLen = Math.max(...lines.map((l) => l.length));
+                const fitWidth = Math.min(600, Math.max(250, maxLineLen * 7 + 40));
+                updateBlock(block.id, { width: fitWidth, height: 0 });
               } else {
                 updateBlock(block.id, { height: 0 });
               }
@@ -169,6 +184,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             onClick={async (e) => {
               e.stopPropagation();
               if (isFormatting) return;
+              log.info("AI format started", block.id);
               setIsFormatting(true);
               try {
                 const res = await fetch("/api/format", {
@@ -208,7 +224,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
       {/* Color picker (sticky blocks only) */}
       {block.type === "sticky" && (
-        <div className="absolute -top-3 -left-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {(["yellow", "pink", "green", "blue", "purple"] as const).map(
             (c) => (
               <button

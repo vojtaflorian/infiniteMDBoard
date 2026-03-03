@@ -20,7 +20,10 @@ import {
 } from "lucide-react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
+import { createLogger } from "@/lib/logger";
 import type { Block } from "@/types";
+
+const log = createLogger("TextBlock");
 
 interface TextBlockProps {
   block: Block;
@@ -148,9 +151,11 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
       if (!html) return; // plain text paste — let browser handle it
 
       e.preventDefault();
+      log.info("Paste HTML detected", { htmlLength: html.length, blockId: block.id });
       const cleaned = preprocessHtml(html);
       const raw = turndown.turndown(cleaned);
       const md = raw.replace(/\n{3,}/g, "\n\n").trim();
+      log.debug("Paste converted to markdown", { mdLength: md.length });
       const ta = textareaRef.current;
       if (!ta) return;
 

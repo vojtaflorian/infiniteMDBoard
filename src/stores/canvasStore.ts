@@ -68,7 +68,7 @@ export const useCanvasStore = create<CanvasState>()(
       addBlock: (type, position, initial) => {
         const defaults: Record<BlockType, Partial<Block>> = {
           text:   { title: "",  content: "", width: 250 },
-          image:  { title: "New Image", content: "https://placehold.co/600x400", width: 250 },
+          image:  { title: "New Image", content: "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnJrZHZybmUzM2s2aWozd2Mya2txY21wajNrODF6em04bGtsa2U3dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cXSWlQ0j4Vta8/giphy.gif", width: 250 },
           link:   { title: "New Link",  content: "", width: 280 },
           sticky: { title: "",          content: "", width: 180, color: "yellow" },
           frame:  { title: "Frame",     content: "", width: 600, height: 400 },
@@ -123,6 +123,7 @@ export const useCanvasStore = create<CanvasState>()(
       },
 
       resizeBlock: (id, width, height) => {
+        log.debug("Resize block", id, { width, height });
         set((s) => ({
           blocks: s.blocks.map((b) =>
             b.id === id

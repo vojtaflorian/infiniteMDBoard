@@ -8,7 +8,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 };
 
 const MIN_LEVEL: LogLevel =
-  process.env.NODE_ENV === "production" ? "warn" : "debug";
+  process.env.NODE_ENV === "production" ? "info" : "debug";
 
 function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[MIN_LEVEL];

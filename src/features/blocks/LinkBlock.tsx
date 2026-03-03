@@ -125,14 +125,25 @@ export function LinkBlock({ block, isEditing }: LinkBlockProps) {
   if (block.embed) {
     const embedUrl = toEmbedUrl(block.content);
     return (
-      <iframe
-        src={embedUrl}
-        className="w-full rounded-lg border-0"
-        style={{ height: block.height > 0 ? block.height - 32 : 300 }}
-        sandbox="allow-scripts allow-same-origin allow-popups"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-        title={block.title}
-      />
+      <div className="relative">
+        <iframe
+          src={embedUrl}
+          className="w-full rounded-lg border-0"
+          style={{ height: block.height > 0 ? block.height - 32 : 300 }}
+          sandbox="allow-scripts allow-same-origin allow-popups"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+          title={block.title}
+        />
+        <a
+          href={ensureProtocol(block.content)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`block text-center text-xs mt-1 underline ${isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"}`}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          Open in new tab
+        </a>
+      </div>
     );
   }
 
