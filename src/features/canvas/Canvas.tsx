@@ -67,7 +67,7 @@ export function Canvas() {
 
       if (e.ctrlKey || e.metaKey) {
         // Ctrl+wheel OR trackpad pinch = ZOOM
-        const factor = 1.05;
+        const factor = 1.04;
         const delta = -e.deltaY;
         const newZoom =
           delta > 0

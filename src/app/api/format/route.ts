@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api/format");
 
 const SYSTEM_PROMPT = `You are a markdown formatting expert. Your task is to convert the provided text into clean, well-structured markdown — nothing more, nothing less.
 
@@ -63,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ formatted });
   } catch (err) {
-    console.error("Gemini API error:", err);
+    log.error("Gemini API error", err);
     return NextResponse.json(
       { error: "AI formatting failed" },
       { status: 502 },

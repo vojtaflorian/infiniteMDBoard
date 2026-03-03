@@ -4,6 +4,7 @@ import { useState } from "react";
 import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
+import { createLogger } from "@/lib/logger";
 import { useUIStore } from "@/stores/uiStore";
 import { TextBlock } from "./TextBlock";
 import { ImageBlock } from "./ImageBlock";
@@ -11,6 +12,8 @@ import { LinkBlock } from "./LinkBlock";
 import { StickyBlock } from "./StickyBlock";
 import { FrameBlock } from "./FrameBlock";
 import type { Block } from "@/types";
+
+const log = createLogger("BlockRenderer");
 
 const stickyBgMap: Record<string, string> = {
   yellow: "bg-yellow-200 border-yellow-300",
@@ -125,11 +128,15 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
       {/* Action buttons */}
       <div className="absolute -top-3 -right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {block.height > 0 && (
+        {(block.height > 0 || (block.type === "text" && block.width !== 250)) && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              updateBlock(block.id, { height: 0 });
+              if (block.type === "text") {
+                updateBlock(block.id, { width: 250, height: 0 });
+              } else {
+                updateBlock(block.id, { height: 0 });
+              }
             }}
             className={`p-1 rounded-full shadow-sm border ${
               isDarkMode
@@ -175,7 +182,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
                   updateBlock(block.id, { content: data.formatted });
                 }
               } catch (err) {
-                console.error("AI format error:", err);
+                log.error("AI format error", err);
               } finally {
                 setIsFormatting(false);
               }

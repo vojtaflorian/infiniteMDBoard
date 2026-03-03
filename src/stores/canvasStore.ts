@@ -67,7 +67,7 @@ export const useCanvasStore = create<CanvasState>()(
 
       addBlock: (type, position, initial) => {
         const defaults: Record<BlockType, Partial<Block>> = {
-          text:   { title: "New Text",  content: "Type markdown here...", width: 250 },
+          text:   { title: "",  content: "", width: 250 },
           image:  { title: "New Image", content: "https://placehold.co/600x400", width: 250 },
           link:   { title: "New Link",  content: "", width: 280 },
           sticky: { title: "",          content: "", width: 180, color: "yellow" },

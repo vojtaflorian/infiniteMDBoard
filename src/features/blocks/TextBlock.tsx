@@ -158,7 +158,11 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
       const end = ta.selectionEnd;
       const text = ta.value;
       const newText = text.slice(0, start) + md + text.slice(end);
-      updateBlock(block.id, { content: newText });
+      // Auto-fit width based on content
+      const lines = md.split("\n");
+      const maxLineLen = Math.max(...lines.map((l) => l.length));
+      const fitWidth = Math.min(600, Math.max(block.width, maxLineLen * 7 + 40));
+      updateBlock(block.id, { content: newText, ...(fitWidth !== block.width && { width: fitWidth }) });
 
       const cursorPos = start + md.length;
       requestAnimationFrame(() => {
