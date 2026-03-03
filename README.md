@@ -22,6 +22,10 @@ Infinite canvas markdown board — create, organize, and connect markdown notes 
   - Floating +/−/Fit All controls
 - **Multiple projects** with auto-save (localStorage)
 - **JSON export/import** (single project or all)
+- **PNG/PDF export** — export entire board as image or PDF
+- **Block duplication** — duplicate any block with one click or Ctrl+D
+- **Multi-select** — Shift+click to select multiple blocks, Delete to remove, Ctrl+D to duplicate all
+- **AI Format** — per-block Sparkles button to clean up markdown via Gemini 2.5 Flash Lite
 - **Undo/Redo** (Ctrl+Z / Ctrl+Shift+Z)
 - **Dark/Light theme**
 
@@ -59,3 +63,9 @@ src/
 ├── lib/            # Utilities (logger, geometry, storage, id)
 └── types/          # Shared TypeScript types
 ```
+
+## Support
+
+If you find this project useful, consider buying me a coffee:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?logo=buy-me-a-coffee)](https://buymeacoffee.com/vojtaflorian)

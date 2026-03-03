@@ -19,7 +19,7 @@ interface CanvasState {
   connections: Connection[];
   camera: Camera;
   activeTool: Tool;
-  selectedBlockId: string | null;
+  selectedBlockIds: string[];
   editingBlockId: string | null;
   draggingBlockId: string | null;
   resizingBlockId: string | null;
@@ -29,6 +29,7 @@ interface CanvasState {
   addBlock: (type: BlockType, position: Position, initial?: Partial<Block>) => string;
   updateBlock: (id: string, updates: Partial<Block>) => void;
   deleteBlock: (id: string) => void;
+  duplicateBlock: (id: string) => string | null;
   moveBlock: (id: string, position: Position) => void;
   resizeBlock: (id: string, width: number, height: number) => void;
   addConnection: (fromId: string, toId: string) => void;
@@ -37,6 +38,10 @@ interface CanvasState {
   setCamera: (camera: Partial<Camera>) => void;
   setTool: (tool: Tool) => void;
   setSelectedBlock: (id: string | null) => void;
+  toggleSelectBlock: (id: string) => void;
+  clearSelection: () => void;
+  deleteSelectedBlocks: () => void;
+  duplicateSelectedBlocks: () => void;
   setEditingBlock: (id: string | null) => void;
   setDraggingBlock: (id: string | null) => void;
   setResizingBlock: (id: string | null) => void;
@@ -52,7 +57,7 @@ const initialState = {
   connections: [] as Connection[],
   camera: { x: 0, y: 0, zoom: 1 } as Camera,
   activeTool: "select" as Tool,
-  selectedBlockId: null as string | null,
+  selectedBlockIds: [] as string[],
   editingBlockId: null as string | null,
   draggingBlockId: null as string | null,
   resizingBlockId: null as string | null,
@@ -109,9 +114,26 @@ export const useCanvasStore = create<CanvasState>()(
           connections: s.connections.filter(
             (c) => c.fromId !== id && c.toId !== id,
           ),
-          selectedBlockId: s.selectedBlockId === id ? null : s.selectedBlockId,
+          selectedBlockIds: s.selectedBlockIds.filter((bid) => bid !== id),
           editingBlockId: s.editingBlockId === id ? null : s.editingBlockId,
         }));
+      },
+
+      duplicateBlock: (id) => {
+        const block = get().blocks.find((b) => b.id === id);
+        if (!block) return null;
+        const newBlock: Block = {
+          ...block,
+          id: generateId(),
+          position: { x: block.position.x + 30, y: block.position.y + 30 },
+          zIndex: get().blocks.length + 1,
+        };
+        log.info("Duplicated block", id, "->", newBlock.id);
+        set((s) => ({
+          blocks: [...s.blocks, newBlock],
+          selectedBlockIds: [newBlock.id],
+        }));
+        return newBlock.id;
       },
 
       moveBlock: (id, position) => {
@@ -164,8 +186,53 @@ export const useCanvasStore = create<CanvasState>()(
 
       setCamera: (partial) =>
         set((s) => ({ camera: { ...s.camera, ...partial } })),
-      setTool: (tool) => set({ activeTool: tool, connectingFromId: null, editingBlockId: null }),
-      setSelectedBlock: (id) => set({ selectedBlockId: id }),
+      setTool: (tool) => set({ activeTool: tool, connectingFromId: null, editingBlockId: null, selectedBlockIds: [] }),
+      setSelectedBlock: (id) => set({ selectedBlockIds: id ? [id] : [] }),
+
+      toggleSelectBlock: (id) => set((s) => ({
+        selectedBlockIds: s.selectedBlockIds.includes(id)
+          ? s.selectedBlockIds.filter((bid) => bid !== id)
+          : [...s.selectedBlockIds, id],
+      })),
+
+      clearSelection: () => set({ selectedBlockIds: [] }),
+
+      deleteSelectedBlocks: () => {
+        const ids = new Set(get().selectedBlockIds);
+        if (ids.size === 0) return;
+        log.info("Deleted blocks", [...ids]);
+        set((s) => ({
+          blocks: s.blocks.filter((b) => !ids.has(b.id)),
+          connections: s.connections.filter(
+            (c) => !ids.has(c.fromId) && !ids.has(c.toId),
+          ),
+          selectedBlockIds: [],
+          editingBlockId: ids.has(s.editingBlockId ?? "") ? null : s.editingBlockId,
+        }));
+      },
+
+      duplicateSelectedBlocks: () => {
+        const ids = get().selectedBlockIds;
+        if (ids.length === 0) return;
+        const newBlocks: Block[] = [];
+        const blockCount = get().blocks.length;
+        for (const id of ids) {
+          const block = get().blocks.find((b) => b.id === id);
+          if (!block) continue;
+          newBlocks.push({
+            ...block,
+            id: generateId(),
+            position: { x: block.position.x + 30, y: block.position.y + 30 },
+            zIndex: blockCount + newBlocks.length + 1,
+          });
+        }
+        log.info("Duplicated blocks", ids.length);
+        set((s) => ({
+          blocks: [...s.blocks, ...newBlocks],
+          selectedBlockIds: newBlocks.map((b) => b.id),
+        }));
+      },
+
       setEditingBlock: (id) => set({ editingBlockId: id }),
       setDraggingBlock: (id) => set({ draggingBlockId: id }),
       setResizingBlock: (id) => set({ resizingBlockId: id }),
@@ -179,7 +246,7 @@ export const useCanvasStore = create<CanvasState>()(
           connections: project.connections,
           camera: project.camera,
           activeTool: "select",
-          selectedBlockId: null,
+          selectedBlockIds: [],
           editingBlockId: null,
           draggingBlockId: null,
           resizingBlockId: null,

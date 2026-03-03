@@ -1,6 +1,6 @@
 {
   "name": "infinite-md-board",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Infinite canvas markdown board with project management",
   "private": true,
   "scripts": {
@@ -12,6 +12,8 @@
   "dependencies": {
     "@google/genai": "^1.43.0",
     "@tailwindcss/typography": "^0.5.19",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.576.0",
     "nanoid": "^5.1.6",
     "next": "16.1.6",

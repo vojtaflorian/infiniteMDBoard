@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles } from "lucide-react";
+import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Copy } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { createLogger } from "@/lib/logger";
@@ -29,10 +29,12 @@ interface BlockRendererProps {
 
 export function BlockRenderer({ block }: BlockRendererProps) {
   const activeTool = useCanvasStore((s) => s.activeTool);
-  const selectedBlockId = useCanvasStore((s) => s.selectedBlockId);
+  const isSelected = useCanvasStore((s) => s.selectedBlockIds.includes(block.id));
+  const toggleSelectBlock = useCanvasStore((s) => s.toggleSelectBlock);
   const editingBlockId = useCanvasStore((s) => s.editingBlockId);
   const connectingFromId = useCanvasStore((s) => s.connectingFromId);
   const deleteBlock = useCanvasStore((s) => s.deleteBlock);
+  const duplicateBlock = useCanvasStore((s) => s.duplicateBlock);
   const setSelectedBlock = useCanvasStore((s) => s.setSelectedBlock);
   const setEditingBlock = useCanvasStore((s) => s.setEditingBlock);
   const setDraggingBlock = useCanvasStore((s) => s.setDraggingBlock);
@@ -44,7 +46,6 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const { isDarkMode } = useUIStore();
   const [isFormatting, setIsFormatting] = useState(false);
 
-  const isSelected = selectedBlockId === block.id;
   const isEditing = editingBlockId === block.id;
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -62,6 +63,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
     }
 
     if (activeTool === "select") {
+      if (e.shiftKey) {
+        toggleSelectBlock(block.id);
+        return;
+      }
       if (isSpaceHeld() || block.type === "frame") {
         // Spacebar held or frame block → drag instead of edit
         setSelectedBlock(block.id);
@@ -214,6 +219,20 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             <Sparkles size={12} />
           </button>
         )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            duplicateBlock(block.id);
+          }}
+          className={`p-1 rounded-full shadow-sm border ${
+            isDarkMode
+              ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-green-400"
+              : "bg-white border-slate-200 text-slate-500 hover:text-green-500"
+          }`}
+          title="Duplicate block"
+        >
+          <Copy size={12} />
+        </button>
         <button
           onClick={handleDelete}
           className="p-1 rounded-full bg-red-500/80 hover:bg-red-500 text-white"

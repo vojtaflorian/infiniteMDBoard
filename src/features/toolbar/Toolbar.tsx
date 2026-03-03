@@ -15,13 +15,22 @@ import {
   Redo2,
   Download,
   ArrowLeft,
+  Upload,
+  FileImage,
+  FileText,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useRouter } from "next/navigation";
-import { downloadJson } from "@/lib/storage";
+import {
+  downloadJson,
+  exportCanvasAsPng,
+  exportCanvasAsPdf,
+  getBlocksBoundingBox,
+  importProjectFromJson,
+} from "@/lib/storage";
 import type { BlockType, Tool } from "@/types";
 
 export function Toolbar() {
@@ -37,6 +46,20 @@ export function Toolbar() {
   const renameProject = useProjectStore((s) => s.renameProject);
   const projectName = activeProjectId ? getProject(activeProjectId)?.name ?? "" : "";
   const [isEditingName, setIsEditingName] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    if (!exportOpen) return;
+    const close = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-export-dropdown]")) {
+        setExportOpen(false);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", close), 0);
+    return () => document.removeEventListener("click", close);
+  }, [exportOpen]);
 
   const handleAddBlock = (type: BlockType) => {
     const cam = useCanvasStore.getState().camera;
@@ -55,12 +78,46 @@ export function Toolbar() {
     useCanvasStore.temporal.getState().redo();
   };
 
-  const handleExport = () => {
+  const handleExportJson = () => {
+    setExportOpen(false);
     if (!activeProjectId) return;
     saveActiveProject(toProjectData());
     const project = getProject(activeProjectId);
     if (!project) return;
     downloadJson(JSON.stringify(project, null, 2), `${project.name}.json`);
+  };
+
+  const handleExportPng = async () => {
+    setExportOpen(false);
+    const canvasEl = document.querySelector("[data-canvas]") as HTMLElement;
+    if (!canvasEl) return;
+    const { blocks, camera } = useCanvasStore.getState();
+    const bbox = getBlocksBoundingBox(blocks);
+    const name = projectName || "board";
+    await exportCanvasAsPng(canvasEl, `${name}.png`, useCanvasStore.getState().setCamera, camera, bbox);
+  };
+
+  const handleExportPdf = async () => {
+    setExportOpen(false);
+    const canvasEl = document.querySelector("[data-canvas]") as HTMLElement;
+    if (!canvasEl) return;
+    const { blocks, camera } = useCanvasStore.getState();
+    const bbox = getBlocksBoundingBox(blocks);
+    const name = projectName || "board";
+    await exportCanvasAsPdf(canvasEl, `${name}.pdf`, useCanvasStore.getState().setCamera, camera, bbox);
+  };
+
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setExportOpen(false);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    file.text().then((text) => {
+      const project = importProjectFromJson(text);
+      if (project) {
+        useCanvasStore.getState().loadProject(project);
+      }
+    });
+    e.target.value = "";
   };
 
   const handleBack = () => {
@@ -202,13 +259,35 @@ export function Toolbar() {
       </button>
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
-      <button
-        onClick={handleExport}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="Export project"
-      >
-        <Download size={20} />
-      </button>
+      <div className="relative" data-export-dropdown onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => setExportOpen(!exportOpen)}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+          title="Export / Import"
+        >
+          <Download size={20} />
+        </button>
+        {exportOpen && (
+          <div className={`absolute top-full right-0 mt-2 w-48 rounded-xl border shadow-xl backdrop-blur-md ${
+            isDarkMode ? "bg-zinc-900/95 border-zinc-700" : "bg-white/95 border-slate-200"
+          }`}>
+            <button onClick={handleExportJson} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 rounded-t-xl ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <Download size={14} /> Export JSON
+            </button>
+            <button onClick={handleExportPng} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <FileImage size={14} /> Export PNG
+            </button>
+            <button onClick={handleExportPdf} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <FileText size={14} /> Export PDF
+            </button>
+            <div className={`border-t ${isDarkMode ? "border-zinc-700" : "border-slate-200"}`} />
+            <label className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 cursor-pointer rounded-b-xl ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <Upload size={14} /> Import JSON
+              <input type="file" accept=".json" className="hidden" onChange={handleImportJson} />
+            </label>
+          </div>
+        )}
+      </div>
       <button
         onClick={toggleTheme}
         className="p-3 rounded-xl hover:bg-white/10 transition-all"

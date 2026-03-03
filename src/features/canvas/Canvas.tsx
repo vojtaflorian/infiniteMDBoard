@@ -35,7 +35,7 @@ export function Canvas() {
   const isPanning = useCanvasStore((s) => s.isPanning);
   const draggingBlockId = useCanvasStore((s) => s.draggingBlockId);
   const resizingBlockId = useCanvasStore((s) => s.resizingBlockId);
-  const setSelectedBlock = useCanvasStore((s) => s.setSelectedBlock);
+  const clearSelection = useCanvasStore((s) => s.clearSelection);
   const setEditingBlock = useCanvasStore((s) => s.setEditingBlock);
   const setDraggingBlock = useCanvasStore((s) => s.setDraggingBlock);
   const setResizingBlock = useCanvasStore((s) => s.setResizingBlock);
@@ -103,6 +103,19 @@ export function Canvas() {
         e.preventDefault();
         setSearchOpen(true);
       }
+      // Delete/Backspace → delete selected blocks
+      if (e.key === "Delete" || e.key === "Backspace") {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag !== "INPUT" && tag !== "TEXTAREA") {
+          e.preventDefault();
+          useCanvasStore.getState().deleteSelectedBlocks();
+        }
+      }
+      // Ctrl/Cmd+D → duplicate selected blocks
+      if ((e.ctrlKey || e.metaKey) && e.key === "d") {
+        e.preventDefault();
+        useCanvasStore.getState().duplicateSelectedBlocks();
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         useCanvasStore.temporal.getState().undo();
@@ -144,14 +157,14 @@ export function Canvas() {
       }
 
       if (activeTool === "select") {
-        setSelectedBlock(null);
+        clearSelection();
         setEditingBlock(null);
         setConnectingFrom(null);
         // Left-click on empty canvas = pan
         startPanning(e.clientX, e.clientY);
       }
     },
-    [activeTool, startPanning, setSelectedBlock, setEditingBlock, setConnectingFrom],
+    [activeTool, startPanning, clearSelection, setEditingBlock, setConnectingFrom],
   );
 
   const handleMouseMove = useCallback(
@@ -289,6 +302,7 @@ export function Canvas() {
   return (
     <div
       ref={canvasRef}
+      data-canvas
       className={`relative w-full h-screen overflow-hidden ${cursorStyle} ${
         isDarkMode ? "bg-zinc-950" : "bg-slate-50"
       }`}
