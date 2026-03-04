@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Copy, Square, Circle, Diamond, ArrowRightLeft } from "lucide-react";
+import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { createLogger } from "@/lib/logger";
@@ -32,9 +32,9 @@ const shapeOptions: { value: BlockShape; icon: typeof Square; label: string }[] 
 
 const SHAPE_STYLES: Record<BlockShape, { className: string; style: React.CSSProperties }> = {
   rect:          { className: "rounded-xl", style: {} },
-  oval:          { className: "rounded-full", style: { padding: "1.5rem 2rem" } },
-  diamond:       { className: "", style: { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", padding: "3rem 2rem", textAlign: "center" } },
-  parallelogram: { className: "", style: { clipPath: "polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%)", padding: "1rem 2.5rem" } },
+  oval:          { className: "rounded-full", style: { padding: "1.5rem 3rem" } },
+  diamond:       { className: "", style: { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", padding: "25% 25%", textAlign: "center" } },
+  parallelogram: { className: "", style: { clipPath: "polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%)", padding: "1rem 15%" } },
 };
 
 interface BlockRendererProps {
@@ -237,6 +237,41 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             <Sparkles size={12} />
           </button>
         )}
+        {block.type === "text" && block.content.trim().length > 0 && (
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (isFormatting) return;
+              log.info("AI translate started", block.id);
+              setIsFormatting(true);
+              try {
+                const res = await fetch("/api/format", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ content: block.content, translate: true }),
+                });
+                if (!res.ok) throw new Error("Translate failed");
+                const data = await res.json();
+                if (data.formatted) {
+                  updateBlock(block.id, { content: data.formatted });
+                }
+              } catch (err) {
+                log.error("AI translate error", err);
+              } finally {
+                setIsFormatting(false);
+              }
+            }}
+            disabled={isFormatting}
+            className={`p-1 rounded-full shadow-sm border ${
+              isDarkMode
+                ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-sky-400"
+                : "bg-white border-slate-200 text-slate-500 hover:text-sky-500"
+            } ${isFormatting ? "animate-pulse" : ""}`}
+            title="Translate to English"
+          >
+            <Languages size={12} />
+          </button>
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -259,9 +294,9 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         </button>
       </div>
 
-      {/* Shape picker (all blocks except frame) */}
+      {/* Shape picker (all blocks except frame) — bottom-left to not block title */}
       {block.type !== "frame" && (
-        <div className="absolute -top-3 -left-3 z-10 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute -bottom-3 -left-3 z-10 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           {shapeOptions.map(({ value, icon: Icon, label }) => (
             <button
               key={value}
@@ -286,7 +321,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
       {/* Color picker (sticky blocks only) */}
       {block.type === "sticky" && (
-        <div className="absolute top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {(["yellow", "pink", "green", "blue", "purple"] as const).map(
             (c) => (
               <button

@@ -26,14 +26,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { content?: string };
+  let body: { content?: string; translate?: boolean };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { content } = body;
+  const { content, translate } = body;
   if (!content || typeof content !== "string" || content.trim().length === 0) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
   }
@@ -46,12 +46,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const systemPrompt = translate
+      ? SYSTEM_PROMPT + "\n\nAdditionally, translate the entire text to English."
+      : SYSTEM_PROMPT;
+
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-lite",
       contents: content,
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: systemPrompt,
         temperature: 0.1,
       },
     });

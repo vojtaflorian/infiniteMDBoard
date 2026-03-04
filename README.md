@@ -27,6 +27,7 @@ Infinite canvas markdown board — create, organize, and connect markdown notes 
 - **Block duplication** — duplicate any block with one click or Ctrl+D
 - **Multi-select** — Shift+click to select multiple blocks, Delete to remove, Ctrl+D to duplicate all
 - **AI Format** — per-block Sparkles button to clean up markdown via Gemini 2.5 Flash Lite
+- **AI Translate** — per-block translate button to convert text to English via Gemini
 - **Undo/Redo** (Ctrl+Z / Ctrl+Shift+Z)
 - **Dark/Light theme**
 
