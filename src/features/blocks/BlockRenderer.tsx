@@ -30,6 +30,13 @@ const shapeOptions: { value: BlockShape; icon: typeof Square; label: string }[] 
   { value: "parallelogram", icon: ArrowRightLeft, label: "Parallelogram" },
 ];
 
+const SHAPE_STYLES: Record<BlockShape, { className: string; style: React.CSSProperties }> = {
+  rect:          { className: "rounded-xl", style: {} },
+  oval:          { className: "rounded-full", style: { padding: "1.5rem 2rem" } },
+  diamond:       { className: "", style: { clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)", padding: "3rem 2rem", textAlign: "center" } },
+  parallelogram: { className: "", style: { clipPath: "polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%)", padding: "1rem 2.5rem" } },
+};
+
 interface BlockRendererProps {
   block: Block;
 }
@@ -56,37 +63,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const isEditing = editingBlockId === block.id;
 
   const shape = block.shape ?? "rect";
-
-  const getShapeStyles = (): { className: string; style: React.CSSProperties } => {
-    switch (shape) {
-      case "oval":
-        return {
-          className: "rounded-full",
-          style: { padding: "1.5rem 2rem" },
-        };
-      case "diamond":
-        return {
-          className: "",
-          style: {
-            clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-            padding: "3rem 2rem",
-            textAlign: "center" as const,
-          },
-        };
-      case "parallelogram":
-        return {
-          className: "",
-          style: {
-            clipPath: "polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%)",
-            padding: "1rem 2.5rem",
-          },
-        };
-      default:
-        return { className: "rounded-xl", style: {} };
-    }
-  };
-
-  const shapeStyles = getShapeStyles();
+  const shapeStyles = SHAPE_STYLES[shape];
   const isClipped = shape === "diamond" || shape === "parallelogram";
 
   const handleMouseDown = (e: React.MouseEvent) => {
