@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Copy } from "lucide-react";
+import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Copy, Square, Circle, Diamond, ArrowRightLeft } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { createLogger } from "@/lib/logger";
@@ -11,7 +11,7 @@ import { ImageBlock } from "./ImageBlock";
 import { LinkBlock } from "./LinkBlock";
 import { StickyBlock } from "./StickyBlock";
 import { FrameBlock } from "./FrameBlock";
-import type { Block } from "@/types";
+import type { Block, BlockShape } from "@/types";
 
 const log = createLogger("BlockRenderer");
 
@@ -22,6 +22,13 @@ const stickyBgMap: Record<string, string> = {
   blue: "bg-blue-200 border-blue-300",
   purple: "bg-purple-200 border-purple-300",
 };
+
+const shapeOptions: { value: BlockShape; icon: typeof Square; label: string }[] = [
+  { value: "rect", icon: Square, label: "Rectangle" },
+  { value: "oval", icon: Circle, label: "Oval" },
+  { value: "diamond", icon: Diamond, label: "Diamond" },
+  { value: "parallelogram", icon: ArrowRightLeft, label: "Parallelogram" },
+];
 
 interface BlockRendererProps {
   block: Block;
@@ -47,6 +54,40 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const [isFormatting, setIsFormatting] = useState(false);
 
   const isEditing = editingBlockId === block.id;
+
+  const shape = block.shape ?? "rect";
+
+  const getShapeStyles = (): { className: string; style: React.CSSProperties } => {
+    switch (shape) {
+      case "oval":
+        return {
+          className: "rounded-full",
+          style: { padding: "1.5rem 2rem" },
+        };
+      case "diamond":
+        return {
+          className: "",
+          style: {
+            clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+            padding: "3rem 2rem",
+            textAlign: "center" as const,
+          },
+        };
+      case "parallelogram":
+        return {
+          className: "",
+          style: {
+            clipPath: "polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%)",
+            padding: "1rem 2.5rem",
+          },
+        };
+      default:
+        return { className: "rounded-xl", style: {} };
+    }
+  };
+
+  const shapeStyles = getShapeStyles();
+  const isClipped = shape === "diamond" || shape === "parallelogram";
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -241,9 +282,34 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         </button>
       </div>
 
+      {/* Shape picker (all blocks except frame) */}
+      {block.type !== "frame" && (
+        <div className="absolute -top-3 -left-3 z-10 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          {shapeOptions.map(({ value, icon: Icon, label }) => (
+            <button
+              key={value}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateBlock(block.id, { shape: value === "rect" ? undefined : value });
+              }}
+              className={`w-5 h-5 flex items-center justify-center rounded border transition-transform ${
+                shape === value
+                  ? "border-blue-500 text-blue-500 scale-110"
+                  : isDarkMode
+                    ? "border-zinc-700 text-zinc-500 hover:text-zinc-300 bg-zinc-800"
+                    : "border-slate-200 text-slate-400 hover:text-slate-600 bg-white"
+              }`}
+              title={label}
+            >
+              <Icon size={10} />
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Color picker (sticky blocks only) */}
       {block.type === "sticky" && (
-        <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {(["yellow", "pink", "green", "blue", "purple"] as const).map(
             (c) => (
               <button
@@ -266,7 +332,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
       {/* Block card */}
       <div
-        className={`rounded-xl p-4 border transition-all ${
+        className={`${shapeStyles.className} p-4 border transition-all ${
           block.type === "frame"
             ? isDarkMode
               ? "bg-zinc-900/30 border-zinc-700 border-dashed"
@@ -282,11 +348,13 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               ? "ring-2 ring-blue-500/50 border-blue-500/30"
               : "ring-2 ring-blue-400/50 border-blue-400/30"
             : ""
-        } ${isEditing ? "shadow-xl" : "shadow-lg"} backdrop-blur-sm`}
+        } ${isEditing ? "shadow-xl" : "shadow-lg"} ${!isClipped ? "backdrop-blur-sm" : ""}`}
         style={{
           ...(block.type !== "text" && block.height > 0
             ? { height: block.height, overflowY: "auto" as const }
             : {}),
+          ...shapeStyles.style,
+          ...(isClipped ? { filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.1))" } : {}),
         }}
       >
         {(() => {
@@ -308,11 +376,12 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       {/* Connection overlay when connect tool is active */}
       {activeTool === "connect" && (
         <div
-          className={`absolute inset-0 rounded-xl border-2 border-dashed pointer-events-none ${
+          className={`absolute inset-0 ${shapeStyles.className || "rounded-xl"} border-2 border-dashed pointer-events-none ${
             connectingFromId === block.id
               ? "border-purple-500 bg-purple-500/10"
               : "border-purple-300/50 hover:border-purple-400 hover:bg-purple-500/5"
           }`}
+          style={isClipped ? { clipPath: shapeStyles.style.clipPath as string } : undefined}
         />
       )}
 
