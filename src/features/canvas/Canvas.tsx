@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
-import { getBlocksInFrame } from "@/lib/geometry";
+import { getBlocksInFrame, getRenderedBlockHeight } from "@/lib/geometry";
 
 // Module-level spacebar state — consumed by BlockRenderer for spacebar+click drag
 let _spaceHeld = false;
@@ -201,7 +201,10 @@ export function Canvas() {
           const state = useCanvasStore.getState();
           const block = state.blocks.find((b) => b.id === resizingBlockId);
           if (block) {
-            blockStartSizeRef.current = { width: block.width, height: block.height };
+            blockStartSizeRef.current = {
+              width: block.width,
+              height: block.height > 0 ? block.height : getRenderedBlockHeight(block),
+            };
           }
           // Pause temporal — save pre-resize state for single undo entry
           preMoveStateRef.current = { blocks: state.blocks, connections: state.connections };

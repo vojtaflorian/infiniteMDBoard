@@ -2,6 +2,7 @@
 
 import { useRef, useCallback, useMemo, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
@@ -274,7 +275,7 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
         isDarkMode ? "prose-invert text-zinc-300" : "text-slate-700"
       } cursor-text`}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
         {block.content}
       </ReactMarkdown>
     </div>

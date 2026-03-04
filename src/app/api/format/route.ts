@@ -39,13 +39,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
   }
 
-  if (content.length > 10_000) {
-    return NextResponse.json(
-      { error: "Content too long (max 10,000 characters)" },
-      { status: 400 },
-    );
-  }
-
   try {
     const systemPrompt = translate
       ? SYSTEM_PROMPT + "\n\nAdditionally, translate the entire text: if the text is in Czech, translate it to English. If the text is in English, translate it to Czech. Keep all formatting intact."
