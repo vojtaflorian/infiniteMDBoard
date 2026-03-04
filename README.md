@@ -29,6 +29,7 @@ Infinite canvas markdown board — create, organize, and connect markdown notes 
 - **AI Format** — per-block Sparkles button to clean up markdown via Gemini 2.5 Flash Lite
 - **AI Translate** — per-block translate button (CZ↔EN bidirectional) via Gemini
 - **Undo/Redo** (Ctrl+Z / Ctrl+Shift+Z)
+- **Presentation mode** — fullscreen with hidden UI (toolbar, minimap, controls), Esc to exit
 - **Dark/Light theme**
 
 ## Tech Stack

@@ -1,13 +1,13 @@
 "use client";
 
-import { Plus, Minus, Maximize } from "lucide-react";
+import { Plus, Minus, Maximize, Presentation } from "lucide-react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 
 export function ZoomControls() {
   const camera = useCanvasStore((s) => s.camera);
   const setCamera = useCanvasStore((s) => s.setCamera);
-  const { isDarkMode } = useUIStore();
+  const { isDarkMode, setPresentationMode } = useUIStore();
 
   const zoomIn = () => {
     setCamera({ zoom: Math.min(camera.zoom * 1.3, 3) });
@@ -80,6 +80,19 @@ export function ZoomControls() {
       />
       <button onClick={fitAll} className={btnClass} title="Fit all blocks">
         <Maximize size={18} />
+      </button>
+      <div
+        className={`w-full h-px ${isDarkMode ? "bg-zinc-800" : "bg-slate-200"}`}
+      />
+      <button
+        onClick={() => {
+          document.documentElement.requestFullscreen?.();
+          setPresentationMode(true);
+        }}
+        className={btnClass}
+        title="Presentation mode"
+      >
+        <Presentation size={18} />
       </button>
     </div>
   );

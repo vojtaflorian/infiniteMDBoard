@@ -68,15 +68,19 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const setTool = useCanvasStore((s) => s.setTool);
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const { isDarkMode } = useUIStore();
+  const presentationMode = useUIStore((s) => s.presentationMode);
   const [isFormatting, setIsFormatting] = useState(false);
 
-  const isEditing = editingBlockId === block.id;
+  const isEditing = presentationMode ? false : editingBlockId === block.id;
 
   const shape = block.shape ?? "rect";
   const shapeStyles = SHAPE_STYLES[shape];
   const isClipped = shape === "diamond" || shape === "parallelogram";
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Presentation mode: no selection, editing, or connecting — just pass through
+    if (presentationMode) return;
+
     e.stopPropagation();
 
     if (activeTool === "connect") {
@@ -151,28 +155,42 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       onMouseDown={handleMouseDown}
       onMouseDownCapture={handleMouseDownCapture}
     >
-      {/* Title input */}
-      <input
-        className={`absolute -top-7 left-0 w-full text-xs font-semibold bg-transparent outline-none truncate ${
-          isDarkMode ? "text-zinc-400" : "text-slate-500"
-        }`}
-        value={block.title}
-        onChange={(e) => updateBlock(block.id, { title: e.target.value })}
-        onMouseDown={(e) => e.stopPropagation()}
-      />
+      {/* Title */}
+      {presentationMode ? (
+        block.title && (
+          <div
+            className={`absolute -top-7 left-0 w-full text-xs font-semibold truncate select-none ${
+              isDarkMode ? "text-zinc-400" : "text-slate-500"
+            }`}
+          >
+            {block.title}
+          </div>
+        )
+      ) : (
+        <input
+          className={`absolute -top-7 left-0 w-full text-xs font-semibold bg-transparent outline-none truncate ${
+            isDarkMode ? "text-zinc-400" : "text-slate-500"
+          }`}
+          value={block.title}
+          onChange={(e) => updateBlock(block.id, { title: e.target.value })}
+          onMouseDown={(e) => e.stopPropagation()}
+        />
+      )}
 
       {/* Drag grip */}
-      <div
-        onMouseDown={handleGripMouseDown}
-        className={`absolute top-1/2 -left-5 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab ${
-          isDarkMode ? "text-zinc-600" : "text-slate-400"
-        }`}
-      >
-        <GripVertical size={16} />
-      </div>
+      {!presentationMode && (
+        <div
+          onMouseDown={handleGripMouseDown}
+          className={`absolute top-1/2 -left-5 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab ${
+            isDarkMode ? "text-zinc-600" : "text-slate-400"
+          }`}
+        >
+          <GripVertical size={16} />
+        </div>
+      )}
 
-      {/* Editing actions — top-left */}
-      <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Editing actions — top-left (hidden in presentation mode) */}
+      {!presentationMode && <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {(block.height > 0 || (block.type === "text" && block.width !== 250)) && (
           <button
             onClick={(e) => {
@@ -302,10 +320,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         >
           <Trash2 size={12} />
         </button>
-      </div>
+      </div>}
 
-      {/* Styling — bottom-left (shapes + colors) */}
-      <div className="absolute -bottom-3 -left-3 z-10 flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Styling — bottom-left (hidden in presentation mode) */}
+      {!presentationMode && <div className="absolute -bottom-3 -left-3 z-10 flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
         {/* Shape picker (all blocks except frame) */}
         {block.type !== "frame" && (
           <>
@@ -351,7 +369,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             />
           ))
         }
-      </div>
+      </div>}
 
       {/* Block card */}
       <div
@@ -399,7 +417,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       </div>
 
       {/* Connection overlay when connect tool is active */}
-      {activeTool === "connect" && (
+      {!presentationMode && activeTool === "connect" && (
         <div
           className={`absolute inset-0 ${shapeStyles.className || "rounded-xl"} border-2 border-dashed pointer-events-none ${
             connectingFromId === block.id
@@ -411,7 +429,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       )}
 
       {/* Resize handle */}
-      <div
+      {!presentationMode && <div
         onMouseDown={handleResizeMouseDown}
         className={`absolute -bottom-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-2 ${
           isDarkMode ? "text-zinc-600" : "text-slate-400"
@@ -425,7 +443,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             strokeLinecap="round"
           />
         </svg>
-      </div>
+      </div>}
     </div>
   );
 }

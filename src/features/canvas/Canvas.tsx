@@ -43,6 +43,8 @@ export function Canvas() {
   const moveBlock = useCanvasStore((s) => s.moveBlock);
   const resizeBlock = useCanvasStore((s) => s.resizeBlock);
   const { isDarkMode } = useUIStore();
+  const presentationMode = useUIStore((s) => s.presentationMode);
+  const setPresentationMode = useUIStore((s) => s.setPresentationMode);
 
   const searchOpen = useUIStore((s) => s.searchOpen);
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
@@ -88,6 +90,17 @@ export function Canvas() {
     el.addEventListener("wheel", handler, { passive: false });
     return () => el.removeEventListener("wheel", handler);
   }, []);
+
+  // Exit presentation mode when leaving fullscreen (Escape)
+  useEffect(() => {
+    const handler = () => {
+      if (!document.fullscreenElement) {
+        setPresentationMode(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, [setPresentationMode]);
 
   // Keyboard shortcuts + spacebar tracking
   useEffect(() => {
@@ -340,19 +353,36 @@ export function Canvas() {
       </div>
 
       {/* UI overlays */}
-      <Toolbar />
+      {!presentationMode && <Toolbar />}
       <ZoomControls />
       <Minimap />
-      {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+      {!presentationMode && searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+      {!presentationMode && (
+        <div
+          className={`absolute bottom-4 left-4 z-50 text-xs font-mono select-none ${
+            isDarkMode ? "text-zinc-600" : "text-slate-400"
+          }`}
+        >
+          v{APP_VERSION} | Zoom: {Math.round(camera.zoom * 100)}% | Position: {Math.round(camera.x)}, {Math.round(camera.y)}
+        </div>
+      )}
 
-      {/* Version & position info */}
-      <div
-        className={`absolute bottom-4 left-4 z-50 text-xs font-mono select-none ${
-          isDarkMode ? "text-zinc-600" : "text-slate-400"
-        }`}
-      >
-        v{APP_VERSION} | Zoom: {Math.round(camera.zoom * 100)}% | Position: {Math.round(camera.x)}, {Math.round(camera.y)}
-      </div>
+      {/* Presentation mode exit hint */}
+      {presentationMode && (
+        <button
+          onClick={() => {
+            document.exitFullscreen?.();
+            setPresentationMode(false);
+          }}
+          className={`absolute top-4 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 rounded-lg text-xs font-medium opacity-0 hover:opacity-100 transition-opacity ${
+            isDarkMode
+              ? "bg-zinc-800/80 text-zinc-400 hover:text-zinc-200"
+              : "bg-white/80 text-slate-500 hover:text-slate-700"
+          } backdrop-blur-sm`}
+        >
+          Press Esc to exit
+        </button>
+      )}
     </div>
   );
 }
