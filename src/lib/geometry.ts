@@ -3,8 +3,16 @@ import type { Block, Position } from "@/types";
 const DEFAULT_AUTO_HEIGHT = 80;
 const EDGE_GAP = 6;
 
+/** Read actual rendered height from DOM for auto-height blocks (height === 0). */
+export function getRenderedBlockHeight(block: Block): number {
+  if (block.height > 0) return block.height;
+  if (typeof document === "undefined") return DEFAULT_AUTO_HEIGHT;
+  const el = document.querySelector(`[data-block-id="${block.id}"]`) as HTMLElement | null;
+  return el ? el.offsetHeight : DEFAULT_AUTO_HEIGHT;
+}
+
 function getEffectiveHeight(block: Block): number {
-  return block.height > 0 ? block.height : DEFAULT_AUTO_HEIGHT;
+  return getRenderedBlockHeight(block);
 }
 
 export function getBlockCenter(block: Block): Position {
@@ -92,7 +100,7 @@ export function getBlocksInFrame(frame: Block, blocks: Block[]): Block[] {
   return blocks.filter((b) => {
     if (b.id === frame.id || b.type === "frame") return false;
     const cx = b.position.x + b.width / 2;
-    const cy = b.position.y + (b.height > 0 ? b.height : 80) / 2;
+    const cy = b.position.y + getRenderedBlockHeight(b) / 2;
     return cx >= fx && cx <= fx + fw && cy >= fy && cy <= fy + fh;
   });
 }

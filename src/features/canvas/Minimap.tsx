@@ -3,6 +3,7 @@
 import { useRef, useEffect, useCallback } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
+import { getRenderedBlockHeight } from "@/lib/geometry";
 
 const MAP_W = 180;
 const MAP_H = 150;
@@ -32,7 +33,7 @@ export function Minimap() {
       minX = Math.min(minX, b.position.x);
       minY = Math.min(minY, b.position.y);
       maxX = Math.max(maxX, b.position.x + b.width);
-      maxY = Math.max(maxY, b.position.y + (b.height > 0 ? b.height : 80));
+      maxY = Math.max(maxY, b.position.y + (getRenderedBlockHeight(b)));
     }
 
     const vpX = -camera.x;
@@ -57,7 +58,7 @@ export function Minimap() {
       const x = (b.position.x - minX) * scale;
       const y = (b.position.y - minY) * scale;
       const w = b.width * scale;
-      const h = (b.height > 0 ? b.height : 80) * scale;
+      const h = (getRenderedBlockHeight(b)) * scale;
       ctx.fillStyle = typeColors[b.type] ?? "#6b7280";
       ctx.globalAlpha = b.type === "frame" ? 0.2 : 0.6;
       ctx.fillRect(x, y, Math.max(w, 2), Math.max(h, 2));
@@ -84,7 +85,7 @@ export function Minimap() {
         minX = Math.min(minX, b.position.x);
         minY = Math.min(minY, b.position.y);
         maxX = Math.max(maxX, b.position.x + b.width);
-        maxY = Math.max(maxY, b.position.y + (b.height > 0 ? b.height : 80));
+        maxY = Math.max(maxY, b.position.y + (getRenderedBlockHeight(b)));
       }
       const vpW = window.innerWidth / camera.zoom;
       const vpH = window.innerHeight / camera.zoom;

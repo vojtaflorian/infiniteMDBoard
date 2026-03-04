@@ -3,6 +3,7 @@
 import { Plus, Minus, Maximize, Presentation } from "lucide-react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
+import { getRenderedBlockHeight } from "@/lib/geometry";
 
 export function ZoomControls() {
   const camera = useCanvasStore((s) => s.camera);
@@ -31,7 +32,7 @@ export function ZoomControls() {
       minX = Math.min(minX, block.position.x);
       minY = Math.min(minY, block.position.y);
       maxX = Math.max(maxX, block.position.x + block.width);
-      maxY = Math.max(maxY, block.position.y + (block.height > 0 ? block.height : 80));
+      maxY = Math.max(maxY, block.position.y + getRenderedBlockHeight(block));
     }
     const padding = 100;
     const bboxWidth = maxX - minX + padding * 2;
