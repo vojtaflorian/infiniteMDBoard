@@ -277,7 +277,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
                 ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-sky-400"
                 : "bg-white border-slate-200 text-slate-500 hover:text-sky-500"
             } ${isFormatting ? "animate-pulse" : ""}`}
-            title="Translate to English"
+            title="Translate CZ↔EN"
           >
             <Languages size={12} />
           </button>

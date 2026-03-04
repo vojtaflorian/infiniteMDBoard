@@ -8,7 +8,8 @@ const SYSTEM_PROMPT = `You are a markdown formatting expert. Your task is to con
 
 **Strict rules:**
 - Preserve the original language exactly — do NOT translate under any circumstances
-- Do NOT add, remove, or reinterpret any content — restructure only
+- Do NOT add, remove, reinterpret, or alter any content or data — restructure and reformat ONLY
+- Never change numbers, dates, names, URLs, code logic, or any factual information
 - Apply \`#\`, \`##\`, \`###\` headings based on the logical hierarchy present in the source text
 - Use \`- item\` bullet lists for unordered items and \`1. item\` numbered lists for sequential or ordered content
 - Wrap all code in fenced code blocks with the appropriate language tag
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const systemPrompt = translate
-      ? SYSTEM_PROMPT + "\n\nAdditionally, translate the entire text to English."
+      ? SYSTEM_PROMPT + "\n\nAdditionally, translate the entire text: if the text is in Czech, translate it to English. If the text is in English, translate it to Czech. Keep all formatting intact."
       : SYSTEM_PROMPT;
 
     const ai = new GoogleGenAI({ apiKey });
