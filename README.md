@@ -9,7 +9,7 @@ Infinite canvas markdown board — create, organize, and connect markdown notes 
 - **Link preview blocks** (paste URL → auto-fetches title, description, favicon, OG image)
 - **Sticky notes** (colored notes: yellow, pink, green, blue, purple)
 - **Block shapes** — rectangle (default), oval, diamond, parallelogram — turn any block into a flowchart element
-- **Frames** — named sections that group and move child blocks together
+- **Frames** — named sections that group and move child blocks together, with optional colored borders
 - **Arrow connections** between blocks with editable labels and connection types (arrow, bidirectional, blocker)
 - **Embed mode** on link blocks — toggle between preview card and iframe (YouTube/Vimeo auto-detect)
 - **Block search** (Cmd+F) — live filtering with jump-to-block

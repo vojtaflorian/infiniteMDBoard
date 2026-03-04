@@ -23,6 +23,16 @@ const stickyBgMap: Record<string, string> = {
   purple: "bg-purple-200 border-purple-300",
 };
 
+const frameBorderMap: Record<string, { dark: string; light: string }> = {
+  yellow: { dark: "border-yellow-500/60", light: "border-yellow-400" },
+  pink:   { dark: "border-pink-500/60",   light: "border-pink-400" },
+  green:  { dark: "border-green-500/60",  light: "border-green-400" },
+  blue:   { dark: "border-blue-500/60",   light: "border-blue-400" },
+  purple: { dark: "border-purple-500/60", light: "border-purple-400" },
+};
+
+const colorOptions = ["yellow", "pink", "green", "blue", "purple"] as const;
+
 const shapeOptions: { value: BlockShape; icon: typeof Square; label: string }[] = [
   { value: "rect", icon: Square, label: "Rectangle" },
   { value: "oval", icon: Circle, label: "Oval" },
@@ -161,8 +171,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         <GripVertical size={16} />
       </div>
 
-      {/* Action buttons */}
-      <div className="absolute -top-3 -right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Editing actions — top-left */}
+      <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {(block.height > 0 || (block.type === "text" && block.width !== 250)) && (
           <button
             onClick={(e) => {
@@ -294,61 +304,64 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         </button>
       </div>
 
-      {/* Shape picker (all blocks except frame) — bottom-left to not block title */}
-      {block.type !== "frame" && (
-        <div className="absolute -bottom-3 -left-3 z-10 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          {shapeOptions.map(({ value, icon: Icon, label }) => (
-            <button
-              key={value}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateBlock(block.id, { shape: value === "rect" ? undefined : value });
-              }}
-              className={`w-5 h-5 flex items-center justify-center rounded border transition-transform ${
-                shape === value
-                  ? "border-blue-500 text-blue-500 scale-110"
-                  : isDarkMode
-                    ? "border-zinc-700 text-zinc-500 hover:text-zinc-300 bg-zinc-800"
-                    : "border-slate-200 text-slate-400 hover:text-slate-600 bg-white"
-              }`}
-              title={label}
-            >
-              <Icon size={10} />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Color picker (sticky blocks only) */}
-      {block.type === "sticky" && (
-        <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {(["yellow", "pink", "green", "blue", "purple"] as const).map(
-            (c) => (
+      {/* Styling — bottom-left (shapes + colors) */}
+      <div className="absolute -bottom-3 -left-3 z-10 flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Shape picker (all blocks except frame) */}
+        {block.type !== "frame" && (
+          <>
+            {shapeOptions.map(({ value, icon: Icon, label }) => (
               <button
-                key={c}
+                key={value}
                 onClick={(e) => {
                   e.stopPropagation();
-                  updateBlock(block.id, { color: c });
+                  updateBlock(block.id, { shape: value === "rect" ? undefined : value });
                 }}
-                className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-125 ${stickyBgMap[c].split(" ")[0]} ${
-                  block.color === c
-                    ? "border-slate-700 scale-110"
-                    : "border-transparent"
+                className={`w-5 h-5 flex items-center justify-center rounded border transition-transform ${
+                  shape === value
+                    ? "border-blue-500 text-blue-500 scale-110"
+                    : isDarkMode
+                      ? "border-zinc-700 text-zinc-500 hover:text-zinc-300 bg-zinc-800"
+                      : "border-slate-200 text-slate-400 hover:text-slate-600 bg-white"
                 }`}
-                title={c}
-              />
-            ),
-          )}
-        </div>
-      )}
+                title={label}
+              >
+                <Icon size={10} />
+              </button>
+            ))}
+            {block.type === "sticky" && (
+              <div className={`w-px h-4 ${isDarkMode ? "bg-zinc-700" : "bg-slate-300"}`} />
+            )}
+          </>
+        )}
+        {/* Color picker (sticky + frame) */}
+        {(block.type === "sticky" || block.type === "frame") &&
+          colorOptions.map((c) => (
+            <button
+              key={c}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateBlock(block.id, { color: c === block.color ? undefined : c });
+              }}
+              className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-125 ${stickyBgMap[c].split(" ")[0]} ${
+                block.color === c
+                  ? "border-slate-700 scale-110"
+                  : "border-transparent"
+              }`}
+              title={c}
+            />
+          ))
+        }
+      </div>
 
       {/* Block card */}
       <div
         className={`${shapeStyles.className} p-4 border transition-all ${
           block.type === "frame"
-            ? isDarkMode
-              ? "bg-zinc-900/30 border-zinc-700 border-dashed"
-              : "bg-slate-100/30 border-slate-300 border-dashed"
+            ? `${isDarkMode ? "bg-zinc-900/30" : "bg-slate-100/30"} border-dashed ${
+                block.color && frameBorderMap[block.color]
+                  ? isDarkMode ? frameBorderMap[block.color].dark : frameBorderMap[block.color].light
+                  : isDarkMode ? "border-zinc-700" : "border-slate-300"
+              } border-2`
             : block.type === "sticky" && block.color
               ? stickyBgMap[block.color] ?? "bg-yellow-200 border-yellow-300"
               : isDarkMode
