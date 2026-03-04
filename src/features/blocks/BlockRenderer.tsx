@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft, Loader2, MessageSquare, Send, X } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { createLogger } from "@/lib/logger";
@@ -71,7 +71,27 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const presentationMode = useUIStore((s) => s.presentationMode);
   const [aiLabel, setAiLabel] = useState<string | null>(null);
   const isFormatting = aiLabel !== null;
+  const [showAiMenu, setShowAiMenu] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
   const didSpaceDrag = useRef(false);
+  const aiMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close AI menu on outside click
+  useEffect(() => {
+    if (!showAiMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (aiMenuRef.current && !aiMenuRef.current.contains(e.target as Node)) {
+        setShowAiMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showAiMenu]);
+
+  // Close AI menu when block is deselected
+  useEffect(() => {
+    if (!isSelected) setShowAiMenu(false);
+  }, [isSelected]);
 
   const isEditing = presentationMode ? false : editingBlockId === block.id;
 
@@ -140,6 +160,29 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       e.stopPropagation();
       e.preventDefault();
       didSpaceDrag.current = false;
+    }
+  };
+
+  const runAi = async (label: string, payload: Record<string, unknown>) => {
+    if (isFormatting) return;
+    log.info(`AI ${label} started`, block.id);
+    setAiLabel(label);
+    setShowAiMenu(false);
+    try {
+      const res = await fetch("/api/format", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: block.content, ...payload }),
+      });
+      if (!res.ok) throw new Error(`${label} failed`);
+      const data = await res.json();
+      if (data.formatted) {
+        updateBlock(block.id, { content: data.formatted });
+      }
+    } catch (err) {
+      log.error(`AI ${label} error`, err);
+    } finally {
+      setAiLabel(null);
     }
   };
 
@@ -242,74 +285,84 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           </button>
         )}
         {block.type === "text" && block.content.trim().length > 0 && (
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (isFormatting) return;
-              log.info("AI format started", block.id);
-              setAiLabel("Formatting…");
-              try {
-                const res = await fetch("/api/format", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ content: block.content }),
-                });
-                if (!res.ok) throw new Error("Format failed");
-                const data = await res.json();
-                if (data.formatted) {
-                  updateBlock(block.id, { content: data.formatted });
-                }
-              } catch (err) {
-                log.error("AI format error", err);
-              } finally {
-                setAiLabel(null);
-              }
-            }}
-            disabled={isFormatting}
-            className={`p-1 rounded-full shadow-sm border ${
-              isDarkMode
-                ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-purple-400"
-                : "bg-white border-slate-200 text-slate-500 hover:text-purple-500"
-            } ${isFormatting ? "animate-pulse" : ""}`}
-            title="AI Format"
-          >
-            <Sparkles size={12} />
-          </button>
-        )}
-        {block.type === "text" && block.content.trim().length > 0 && (
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (isFormatting) return;
-              log.info("AI translate started", block.id);
-              setAiLabel("Translating…");
-              try {
-                const res = await fetch("/api/format", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ content: block.content, translate: true }),
-                });
-                if (!res.ok) throw new Error("Translate failed");
-                const data = await res.json();
-                if (data.formatted) {
-                  updateBlock(block.id, { content: data.formatted });
-                }
-              } catch (err) {
-                log.error("AI translate error", err);
-              } finally {
-                setAiLabel(null);
-              }
-            }}
-            disabled={isFormatting}
-            className={`p-1 rounded-full shadow-sm border ${
-              isDarkMode
-                ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-sky-400"
-                : "bg-white border-slate-200 text-slate-500 hover:text-sky-500"
-            } ${isFormatting ? "animate-pulse" : ""}`}
-            title="Translate CZ↔EN"
-          >
-            <Languages size={12} />
-          </button>
+          <div ref={aiMenuRef} className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAiMenu((v) => !v);
+              }}
+              disabled={isFormatting}
+              className={`p-1 rounded-full shadow-sm border ${
+                isDarkMode
+                  ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-purple-400"
+                  : "bg-white border-slate-200 text-slate-500 hover:text-purple-500"
+              } ${isFormatting ? "animate-pulse" : ""} ${showAiMenu ? (isDarkMode ? "text-purple-400" : "text-purple-500") : ""}`}
+              title="AI actions"
+            >
+              <Sparkles size={12} />
+            </button>
+            {showAiMenu && (
+              <div
+                className={`absolute top-full left-0 mt-1 z-20 rounded-lg border shadow-lg p-1 min-w-[180px] ${
+                  isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-slate-200"
+                }`}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={(e) => { e.stopPropagation(); runAi("Formatting…", {}); }}
+                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-left ${
+                    isDarkMode ? "text-zinc-300 hover:bg-zinc-700" : "text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  <Sparkles size={12} /> Format markdown
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); runAi("Translating…", { translate: true }); }}
+                  className={`flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-left ${
+                    isDarkMode ? "text-zinc-300 hover:bg-zinc-700" : "text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  <Languages size={12} /> Translate CZ↔EN
+                </button>
+                <div className={`my-1 h-px ${isDarkMode ? "bg-zinc-700" : "bg-slate-200"}`} />
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!customPrompt.trim()) return;
+                    const p = customPrompt.trim();
+                    setCustomPrompt("");
+                    runAi("Processing…", { prompt: p });
+                  }}
+                  className="flex items-center gap-1 px-1"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <MessageSquare size={12} className={isDarkMode ? "text-zinc-500 shrink-0" : "text-slate-400 shrink-0"} />
+                  <input
+                    autoFocus
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder="Custom prompt…"
+                    className={`flex-1 text-xs py-1 px-1 bg-transparent outline-none ${
+                      isDarkMode ? "text-zinc-300 placeholder:text-zinc-600" : "text-slate-700 placeholder:text-slate-400"
+                    }`}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!customPrompt.trim()}
+                    className={`p-1 rounded ${
+                      customPrompt.trim()
+                        ? isDarkMode ? "text-purple-400 hover:bg-zinc-700" : "text-purple-500 hover:bg-slate-100"
+                        : isDarkMode ? "text-zinc-600" : "text-slate-300"
+                    }`}
+                  >
+                    <Send size={12} />
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         )}
         <button
           onClick={(e) => {

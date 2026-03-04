@@ -27,22 +27,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { content?: string; translate?: boolean };
+  let body: { content?: string; translate?: boolean; prompt?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { content, translate } = body;
+  const { content, translate, prompt } = body;
   if (!content || typeof content !== "string" || content.trim().length === 0) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
   }
 
   try {
-    const systemPrompt = translate
-      ? SYSTEM_PROMPT + "\n\nAdditionally, translate the entire text: if the text is in Czech, translate it to English. If the text is in English, translate it to Czech. Keep all formatting intact."
-      : SYSTEM_PROMPT;
+    let systemPrompt: string;
+    if (prompt) {
+      systemPrompt = `You are a helpful AI assistant. The user has provided text and a custom instruction.\n\n**Custom instruction:** ${prompt}\n\n**Rules:**\n- Apply the instruction to the provided text\n- Output the result as clean, well-structured markdown\n- Use headings, lists, bold, code blocks, and tables where appropriate\n- Output ONLY the result — no preamble, no explanation, no commentary`;
+    } else if (translate) {
+      systemPrompt = SYSTEM_PROMPT + "\n\nAdditionally, translate the entire text: if the text is in Czech, translate it to English. If the text is in English, translate it to Czech. Keep all formatting intact.";
+    } else {
+      systemPrompt = SYSTEM_PROMPT;
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
