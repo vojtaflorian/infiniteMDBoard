@@ -6,7 +6,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { getRenderedBlockHeight } from "@/lib/geometry";
 
 const MAP_W = 180;
-const MAP_H = 150;
+const MAP_H = 192;
 const PADDING = 20;
 
 const typeColors: Record<string, string> = {

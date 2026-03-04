@@ -14,6 +14,10 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("canvasStore");
 
+// Debounce guard for duplicate operations
+let lastDuplicateTime = 0;
+const DUPLICATE_DEBOUNCE_MS = 300;
+
 interface CanvasState {
   blocks: Block[];
   connections: Connection[];
@@ -120,6 +124,9 @@ export const useCanvasStore = create<CanvasState>()(
       },
 
       duplicateBlock: (id) => {
+        const now = Date.now();
+        if (now - lastDuplicateTime < DUPLICATE_DEBOUNCE_MS) return null;
+        lastDuplicateTime = now;
         const block = get().blocks.find((b) => b.id === id);
         if (!block) return null;
         const newBlock: Block = {
@@ -212,6 +219,9 @@ export const useCanvasStore = create<CanvasState>()(
       },
 
       duplicateSelectedBlocks: () => {
+        const now = Date.now();
+        if (now - lastDuplicateTime < DUPLICATE_DEBOUNCE_MS) return;
+        lastDuplicateTime = now;
         const ids = get().selectedBlockIds;
         if (ids.length === 0) return;
         const newBlocks: Block[] = [];

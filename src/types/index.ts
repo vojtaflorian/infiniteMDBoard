@@ -27,6 +27,7 @@ export interface Block {
   color?: string;
   embed?: boolean;
   shape?: BlockShape;
+  linkUrl?: string;
 }
 
 export interface Connection {

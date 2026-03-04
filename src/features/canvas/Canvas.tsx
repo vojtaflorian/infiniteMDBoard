@@ -112,6 +112,8 @@ export function Canvas() {
           _spaceHeld = true;
         }
       }
+      // Ignore key repeats for all shortcuts below
+      if (e.repeat) return;
       if ((e.ctrlKey || e.metaKey) && e.key === "f") {
         e.preventDefault();
         setSearchOpen(true);
@@ -147,11 +149,16 @@ export function Canvas() {
         _spaceHeld = false;
       }
     };
+    // Reset spacebar when window loses focus (e.g. Cmd+Tab while holding space)
+    const handleBlur = () => { _spaceHeld = false; };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleBlur);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleBlur);
     };
   }, []);
 

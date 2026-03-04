@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -70,6 +70,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const { isDarkMode } = useUIStore();
   const presentationMode = useUIStore((s) => s.presentationMode);
   const [isFormatting, setIsFormatting] = useState(false);
+  const didSpaceDrag = useRef(false);
 
   const isEditing = presentationMode ? false : editingBlockId === block.id;
 
@@ -125,9 +126,19 @@ export function BlockRenderer({ block }: BlockRendererProps) {
     if (activeTool === "select" && isSpaceHeld()) {
       e.stopPropagation();
       e.preventDefault();
+      didSpaceDrag.current = true;
       setSelectedBlock(block.id);
       setEditingBlock(null);
       setDraggingBlock(block.id);
+    }
+  };
+
+  // Suppress click on links after space+drag so they don't open
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (didSpaceDrag.current) {
+      e.stopPropagation();
+      e.preventDefault();
+      didSpaceDrag.current = false;
     }
   };
 
@@ -154,6 +165,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       }}
       onMouseDown={handleMouseDown}
       onMouseDownCapture={handleMouseDownCapture}
+      onClickCapture={handleClickCapture}
     >
       {/* Title */}
       {presentationMode ? (
@@ -191,29 +203,27 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
       {/* Editing actions — top-left (hidden in presentation mode) */}
       {!presentationMode && <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {(block.height > 0 || (block.type === "text" && block.width !== 250)) && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (block.type === "text") {
-                const lines = block.content.split("\n");
-                const maxLineLen = Math.max(...lines.map((l) => l.length));
-                const fitWidth = Math.min(600, Math.max(250, maxLineLen * 7 + 40));
-                updateBlock(block.id, { width: fitWidth, height: 0 });
-              } else {
-                updateBlock(block.id, { height: 0 });
-              }
-            }}
-            className={`p-1 rounded-full shadow-sm border ${
-              isDarkMode
-                ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-blue-400"
-                : "bg-white border-slate-200 text-slate-500 hover:text-blue-500"
-            }`}
-            title="Fit to content"
-          >
-            <Maximize2 size={12} />
-          </button>
-        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (block.type === "text") {
+              const lines = block.content.split("\n");
+              const maxLineLen = Math.max(...lines.map((l) => l.length));
+              const fitWidth = Math.min(600, Math.max(250, maxLineLen * 7 + 40));
+              updateBlock(block.id, { width: fitWidth, height: 0 });
+            } else {
+              updateBlock(block.id, { height: 0 });
+            }
+          }}
+          className={`p-1 rounded-full shadow-sm border ${
+            isDarkMode
+              ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-blue-400"
+              : "bg-white border-slate-200 text-slate-500 hover:text-blue-500"
+          }`}
+          title="Fit to content"
+        >
+          <Maximize2 size={12} />
+        </button>
         {block.type === "link" && block.content && (
           <button
             onClick={(e) => {
@@ -428,22 +438,39 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         />
       )}
 
-      {/* Resize handle */}
-      {!presentationMode && <div
-        onMouseDown={handleResizeMouseDown}
-        className={`absolute -bottom-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-2 ${
-          isDarkMode ? "text-zinc-600" : "text-slate-400"
-        }`}
-      >
-        <svg width="12" height="12" viewBox="0 0 10 10">
-          <path
-            d="M9 1L1 9M9 5L5 9"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>}
+      {/* Resize handles — top-right + bottom-right */}
+      {!presentationMode && <>
+        <div
+          onMouseDown={handleResizeMouseDown}
+          className={`absolute -top-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-2 ${
+            isDarkMode ? "text-zinc-600" : "text-slate-400"
+          }`}
+        >
+          <svg width="12" height="12" viewBox="0 0 10 10">
+            <path
+              d="M9 1L1 9M9 5L5 9"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+        <div
+          onMouseDown={handleResizeMouseDown}
+          className={`absolute -bottom-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-2 ${
+            isDarkMode ? "text-zinc-600" : "text-slate-400"
+          }`}
+        >
+          <svg width="12" height="12" viewBox="0 0 10 10">
+            <path
+              d="M9 1L1 9M9 5L5 9"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+      </>}
     </div>
   );
 }
