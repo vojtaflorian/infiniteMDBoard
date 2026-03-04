@@ -1,5 +1,7 @@
 export type BlockType = "text" | "image" | "link" | "sticky" | "frame";
 
+export type BlockShape = "rect" | "oval" | "diamond" | "parallelogram";
+
 export type ConnectionStyle = "arrow" | "bidirectional" | "blocker";
 
 export type Tool = "select" | "connect";
@@ -24,6 +26,7 @@ export interface Block {
   zIndex: number;
   color?: string;
   embed?: boolean;
+  shape?: BlockShape;
 }
 
 export interface Connection {
