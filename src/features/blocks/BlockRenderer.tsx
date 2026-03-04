@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft } from "lucide-react";
+import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft, Loader2 } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { createLogger } from "@/lib/logger";
@@ -69,7 +69,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const { isDarkMode } = useUIStore();
   const presentationMode = useUIStore((s) => s.presentationMode);
-  const [isFormatting, setIsFormatting] = useState(false);
+  const [aiLabel, setAiLabel] = useState<string | null>(null);
+  const isFormatting = aiLabel !== null;
   const didSpaceDrag = useRef(false);
 
   const isEditing = presentationMode ? false : editingBlockId === block.id;
@@ -246,7 +247,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               e.stopPropagation();
               if (isFormatting) return;
               log.info("AI format started", block.id);
-              setIsFormatting(true);
+              setAiLabel("Formatting…");
               try {
                 const res = await fetch("/api/format", {
                   method: "POST",
@@ -261,7 +262,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               } catch (err) {
                 log.error("AI format error", err);
               } finally {
-                setIsFormatting(false);
+                setAiLabel(null);
               }
             }}
             disabled={isFormatting}
@@ -281,7 +282,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               e.stopPropagation();
               if (isFormatting) return;
               log.info("AI translate started", block.id);
-              setIsFormatting(true);
+              setAiLabel("Translating…");
               try {
                 const res = await fetch("/api/format", {
                   method: "POST",
@@ -296,7 +297,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               } catch (err) {
                 log.error("AI translate error", err);
               } finally {
-                setIsFormatting(false);
+                setAiLabel(null);
               }
             }}
             disabled={isFormatting}
@@ -424,6 +425,19 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               return <FrameBlock block={block} isEditing={isEditing} />;
           }
         })()}
+        {/* AI processing overlay */}
+        {isFormatting && (
+          <div className={`absolute inset-0 flex items-center justify-center rounded-xl backdrop-blur-sm z-10 ${
+            isDarkMode ? "bg-zinc-900/70" : "bg-white/70"
+          }`}>
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+              isDarkMode ? "bg-zinc-800 text-zinc-300" : "bg-slate-100 text-slate-600"
+            }`}>
+              <Loader2 size={14} className="animate-spin" />
+              {aiLabel}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Connection overlay when connect tool is active */}

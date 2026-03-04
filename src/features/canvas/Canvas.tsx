@@ -68,16 +68,21 @@ export function Canvas() {
       const currentCamera = useCanvasStore.getState().camera;
 
       if (e.ctrlKey || e.metaKey) {
-        // Ctrl+wheel OR trackpad pinch = ZOOM
+        // Ctrl+wheel OR trackpad pinch = ZOOM toward cursor
         const factor = 1.04;
         const delta = -e.deltaY;
-        const newZoom =
-          delta > 0
-            ? currentCamera.zoom * factor
-            : currentCamera.zoom / factor;
-        useCanvasStore
-          .getState()
-          .setCamera({ zoom: Math.min(Math.max(newZoom, 0.1), 3) });
+        const oldZoom = currentCamera.zoom;
+        const newZoom = Math.min(Math.max(
+          delta > 0 ? oldZoom * factor : oldZoom / factor,
+        0.1), 3);
+        const rect = el.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        useCanvasStore.getState().setCamera({
+          zoom: newZoom,
+          x: currentCamera.x + mx / newZoom - mx / oldZoom,
+          y: currentCamera.y + my / newZoom - my / oldZoom,
+        });
       } else {
         // Plain wheel = PAN
         useCanvasStore.getState().setCamera({
@@ -307,10 +312,18 @@ export function Canvas() {
       ) {
         return;
       }
-      // Zoom in by 1.5x on double click empty canvas
-      const currentZoom = useCanvasStore.getState().camera.zoom;
-      const newZoom = Math.min(currentZoom * 1.5, 3);
-      useCanvasStore.getState().setCamera({ zoom: newZoom });
+      // Zoom in by 1.5x toward double-click position
+      const cam = useCanvasStore.getState().camera;
+      const oldZoom = cam.zoom;
+      const newZoom = Math.min(oldZoom * 1.5, 3);
+      const rect = canvasRef.current!.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      useCanvasStore.getState().setCamera({
+        zoom: newZoom,
+        x: cam.x + mx / newZoom - mx / oldZoom,
+        y: cam.y + my / newZoom - my / oldZoom,
+      });
     },
     [],
   );
