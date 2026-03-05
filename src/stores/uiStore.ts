@@ -4,10 +4,12 @@ import { persist } from "zustand/middleware";
 interface UIState {
   isDarkMode: boolean;
   searchOpen: boolean;
+  searchQuery: string;
   presentationMode: boolean;
   toggleTheme: () => void;
   setDarkMode: (dark: boolean) => void;
   setSearchOpen: (open: boolean) => void;
+  setSearchQuery: (query: string) => void;
   setPresentationMode: (on: boolean) => void;
 }
 
@@ -16,12 +18,17 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       isDarkMode: true,
       searchOpen: false,
+      searchQuery: "",
       presentationMode: false,
       toggleTheme: () => set((s) => ({ isDarkMode: !s.isDarkMode })),
       setDarkMode: (dark) => set({ isDarkMode: dark }),
-      setSearchOpen: (open) => set({ searchOpen: open }),
+      setSearchOpen: (open) => set({ searchOpen: open, ...(!open && { searchQuery: "" }) }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
       setPresentationMode: (on) => set({ presentationMode: on }),
     }),
-    { name: "infiniteMDBoard_ui" },
+    {
+      name: "infiniteMDBoard_ui",
+      partialize: (state) => ({ isDarkMode: state.isDarkMode }),
+    },
   ),
 );

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { importProjectFromJson, importAllFromJson, downloadJson } from "@/lib/storage";
 import { createLogger } from "@/lib/logger";
-import { APP_VERSION, APP_NAME } from "@/lib/config";
+import { APP_VERSION, APP_NAME, APP_TAGLINE, APP_FEATURES } from "@/lib/config";
 
 const log = createLogger("ProjectList");
 
@@ -72,9 +72,10 @@ export function ProjectList() {
       }`}
     >
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">infiniteMDBoard</h1>
-          <div className="flex gap-2">
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-3xl font-bold">infiniteMDBoard</h1>
+            <div className="flex gap-2">
             <button
               onClick={handleExportAll}
               className={`p-2 rounded-lg transition-all ${
@@ -101,6 +102,17 @@ export function ProjectList() {
               onChange={handleImport}
               className="hidden"
             />
+          </div>
+          </div>
+          <p className={`text-sm mb-4 ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
+            {APP_TAGLINE}
+          </p>
+          <div className={`flex flex-wrap gap-x-1 gap-y-1 text-xs ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+            {APP_FEATURES.map((f, i) => (
+              <span key={f.short}>
+                {f.short}{i < APP_FEATURES.length - 1 && <span className="mx-1">·</span>}
+              </span>
+            ))}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

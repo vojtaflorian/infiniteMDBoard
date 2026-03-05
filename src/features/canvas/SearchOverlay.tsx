@@ -13,10 +13,16 @@ export function SearchOverlay({ onClose }: SearchOverlayProps) {
   const blocks = useCanvasStore((s) => s.blocks);
   const setCamera = useCanvasStore((s) => s.setCamera);
   const setSelectedBlock = useCanvasStore((s) => s.setSelectedBlock);
-  const { isDarkMode } = useUIStore();
+  const { isDarkMode, setSearchQuery } = useUIStore();
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync query to global store for block highlighting
+  useEffect(() => {
+    setSearchQuery(query.length >= 2 ? query : "");
+    return () => setSearchQuery("");
+  }, [query, setSearchQuery]);
 
   const results = query.length >= 2
     ? blocks.filter(

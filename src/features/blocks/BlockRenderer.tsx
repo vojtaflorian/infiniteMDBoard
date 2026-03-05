@@ -69,6 +69,11 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const { isDarkMode } = useUIStore();
   const presentationMode = useUIStore((s) => s.presentationMode);
+  const searchQuery = useUIStore((s) => s.searchQuery);
+  const isSearchMatch = searchQuery.length >= 2 && block.type !== "frame" && (
+    block.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    block.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const [aiLabel, setAiLabel] = useState<string | null>(null);
   const isFormatting = aiLabel !== null;
   const [showAiMenu, setShowAiMenu] = useState(false);
@@ -450,11 +455,13 @@ export function BlockRenderer({ block }: BlockRendererProps) {
                 ? "bg-zinc-900/90 border-zinc-800"
                 : "bg-white/90 border-slate-200"
         } ${
-          isSelected
-            ? isDarkMode
-              ? "ring-2 ring-blue-500/50 border-blue-500/30"
-              : "ring-2 ring-blue-400/50 border-blue-400/30"
-            : ""
+          isSearchMatch
+            ? "ring-2 ring-yellow-400/70 border-yellow-400/50"
+            : isSelected
+              ? isDarkMode
+                ? "ring-2 ring-blue-500/50 border-blue-500/30"
+                : "ring-2 ring-blue-400/50 border-blue-400/30"
+              : ""
         } ${isEditing ? "shadow-xl" : "shadow-lg"} ${!isClipped ? "backdrop-blur-sm" : ""}`}
         style={{
           ...(block.type !== "text" && block.height > 0
