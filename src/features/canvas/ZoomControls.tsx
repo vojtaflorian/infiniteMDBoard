@@ -4,6 +4,7 @@ import { Plus, Minus, Maximize, Presentation } from "lucide-react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { getRenderedBlockHeight } from "@/lib/geometry";
+import { ZOOM_MIN, ZOOM_MAX, ZOOM_BUTTON_FACTOR, ZOOM_FIT_MAX, FIT_ALL_PADDING } from "@/lib/config";
 
 export function ZoomControls() {
   const camera = useCanvasStore((s) => s.camera);
@@ -11,11 +12,11 @@ export function ZoomControls() {
   const { isDarkMode, setPresentationMode } = useUIStore();
 
   const zoomIn = () => {
-    setCamera({ zoom: Math.min(camera.zoom * 1.3, 3) });
+    setCamera({ zoom: Math.min(camera.zoom * ZOOM_BUTTON_FACTOR, ZOOM_MAX) });
   };
 
   const zoomOut = () => {
-    setCamera({ zoom: Math.max(camera.zoom / 1.3, 0.1) });
+    setCamera({ zoom: Math.max(camera.zoom / ZOOM_BUTTON_FACTOR, ZOOM_MIN) });
   };
 
   const fitAll = () => {
@@ -34,12 +35,11 @@ export function ZoomControls() {
       maxX = Math.max(maxX, block.position.x + block.width);
       maxY = Math.max(maxY, block.position.y + getRenderedBlockHeight(block));
     }
-    const padding = 100;
-    const bboxWidth = maxX - minX + padding * 2;
-    const bboxHeight = maxY - minY + padding * 2;
+    const bboxWidth = maxX - minX + FIT_ALL_PADDING * 2;
+    const bboxHeight = maxY - minY + FIT_ALL_PADDING * 2;
     const viewWidth = window.innerWidth;
     const viewHeight = window.innerHeight;
-    const zoom = Math.min(viewWidth / bboxWidth, viewHeight / bboxHeight, 2);
+    const zoom = Math.min(viewWidth / bboxWidth, viewHeight / bboxHeight, ZOOM_FIT_MAX);
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     setCamera({

@@ -71,7 +71,7 @@ export function ImageBlock({ block, isEditing }: ImageBlockProps) {
             isDarkMode ? "bg-zinc-800/80 text-zinc-400" : "bg-white/80 text-slate-500"
           }`}>
             <Link2 size={10} />
-            {new URL(block.linkUrl).hostname}
+            {(() => { try { return new URL(block.linkUrl!).hostname; } catch { return block.linkUrl; } })()}
           </span>
         </div>
       </div>

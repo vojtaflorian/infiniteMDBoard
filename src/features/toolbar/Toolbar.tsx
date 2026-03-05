@@ -24,6 +24,7 @@ import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useRouter } from "next/navigation";
+import { createLogger } from "@/lib/logger";
 import {
   downloadJson,
   exportCanvasAsPng,
@@ -32,6 +33,8 @@ import {
   importProjectFromJson,
 } from "@/lib/storage";
 import type { BlockType, Tool } from "@/types";
+
+const log = createLogger("Toolbar");
 
 export function Toolbar() {
   const router = useRouter();
@@ -94,7 +97,11 @@ export function Toolbar() {
     const { blocks, camera } = useCanvasStore.getState();
     const bbox = getBlocksBoundingBox(blocks);
     const name = projectName || "board";
-    await exportCanvasAsPng(canvasEl, `${name}.png`, useCanvasStore.getState().setCamera, camera, bbox);
+    try {
+      await exportCanvasAsPng(canvasEl, `${name}.png`, useCanvasStore.getState().setCamera, camera, bbox);
+    } catch (err) {
+      log.error("PNG export failed", err);
+    }
   };
 
   const handleExportPdf = async () => {
@@ -104,7 +111,11 @@ export function Toolbar() {
     const { blocks, camera } = useCanvasStore.getState();
     const bbox = getBlocksBoundingBox(blocks);
     const name = projectName || "board";
-    await exportCanvasAsPdf(canvasEl, `${name}.pdf`, useCanvasStore.getState().setCamera, camera, bbox);
+    try {
+      await exportCanvasAsPdf(canvasEl, `${name}.pdf`, useCanvasStore.getState().setCamera, camera, bbox);
+    } catch (err) {
+      log.error("PDF export failed", err);
+    }
   };
 
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +144,7 @@ export function Toolbar() {
   ) => (
     <button
       key={tool}
-      onClick={() => setTool(tool)}
+      onClick={() => setTool(activeTool === tool ? "select" : tool)}
       className={`p-3 rounded-xl transition-all ${
         activeTool === tool
           ? `${activeColor} text-white`

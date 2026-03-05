@@ -18,7 +18,7 @@ import { Minimap } from "./Minimap";
 import { SearchOverlay } from "./SearchOverlay";
 import { useCamera } from "./hooks/useCamera";
 import { useDragDrop } from "./hooks/useDragDrop";
-import { APP_VERSION } from "@/lib/config";
+import { APP_VERSION, ZOOM_MIN, ZOOM_MAX, ZOOM_WHEEL_FACTOR, ZOOM_DBLCLICK_FACTOR, GRID_SIZE } from "@/lib/config";
 
 export function Canvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -69,12 +69,11 @@ export function Canvas() {
 
       if (e.ctrlKey || e.metaKey) {
         // Ctrl+wheel OR trackpad pinch = ZOOM toward cursor
-        const factor = 1.04;
         const delta = -e.deltaY;
         const oldZoom = currentCamera.zoom;
         const newZoom = Math.min(Math.max(
-          delta > 0 ? oldZoom * factor : oldZoom / factor,
-        0.1), 3);
+          delta > 0 ? oldZoom * ZOOM_WHEEL_FACTOR : oldZoom / ZOOM_WHEEL_FACTOR,
+        ZOOM_MIN), ZOOM_MAX);
         const rect = el.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
@@ -119,6 +118,14 @@ export function Canvas() {
       }
       // Ignore key repeats for all shortcuts below
       if (e.repeat) return;
+      if (e.key === "Escape") {
+        const state = useCanvasStore.getState();
+        if (state.activeTool !== "select") {
+          state.setTool("select");
+        } else if (state.connectingFromId) {
+          state.setConnectingFrom(null);
+        }
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === "f") {
         e.preventDefault();
         setSearchOpen(true);
@@ -178,6 +185,12 @@ export function Canvas() {
       // Middle-click always pans
       if (e.button === 1) {
         startPanning(e.clientX, e.clientY);
+        return;
+      }
+
+      if (activeTool === "connect") {
+        // Click on empty canvas cancels connect tool
+        useCanvasStore.getState().setTool("select");
         return;
       }
 
@@ -315,7 +328,7 @@ export function Canvas() {
       // Zoom in by 1.5x toward double-click position
       const cam = useCanvasStore.getState().camera;
       const oldZoom = cam.zoom;
-      const newZoom = Math.min(oldZoom * 1.5, 3);
+      const newZoom = Math.min(oldZoom * ZOOM_DBLCLICK_FACTOR, ZOOM_MAX);
       const rect = canvasRef.current!.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
@@ -357,7 +370,7 @@ export function Canvas() {
           backgroundImage: isDarkMode
             ? "radial-gradient(circle, #27272a 1px, transparent 1px)"
             : "radial-gradient(circle, #cbd5e1 1px, transparent 1px)",
-          backgroundSize: `${24 * camera.zoom}px ${24 * camera.zoom}px`,
+          backgroundSize: `${GRID_SIZE * camera.zoom}px ${GRID_SIZE * camera.zoom}px`,
           backgroundPosition: `${camera.x * camera.zoom}px ${camera.y * camera.zoom}px`,
         }}
       />

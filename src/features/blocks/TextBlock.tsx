@@ -271,7 +271,7 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
 
   return (
     <div
-      className={`text-sm leading-relaxed prose prose-sm ${
+      className={`text-sm leading-relaxed prose prose-sm max-w-none ${
         isDarkMode ? "prose-invert text-zinc-300" : "text-slate-700"
       } cursor-text`}
     >

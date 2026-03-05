@@ -118,16 +118,16 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
           )}
         </foreignObject>
       )}
-      {/* Style picker + delete button on hover */}
+      {/* Style picker + delete button on hover — centered on midpoint below label */}
       {hovered && !editing && (
         <foreignObject
-          x={midpoint.x + 50}
-          y={midpoint.y - 10}
+          x={midpoint.x - 55}
+          y={midpoint.y + 10}
           width="110"
-          height="20"
+          height="24"
           style={{ overflow: "visible", pointerEvents: "auto" }}
         >
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-1">
             {(
               [
                 { style: "arrow" as ConnectionStyle, icon: ArrowRight, title: "Arrow" },

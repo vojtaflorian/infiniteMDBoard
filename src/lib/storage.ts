@@ -113,13 +113,13 @@ export async function exportCanvasAsPng(
   const viewportH = canvasEl.clientHeight;
   const zoom = Math.min(viewportW / boundingBox.width, viewportH / boundingBox.height, 2);
 
-  // Centre the bounding box in the viewport
+  // Centre the bounding box in the viewport (same formula as fitAll)
   const centreX = boundingBox.minX + boundingBox.width / 2;
   const centreY = boundingBox.minY + boundingBox.height / 2;
 
   setCamera({
-    x: centreX - viewportW / (2 * zoom),
-    y: centreY - viewportH / (2 * zoom),
+    x: -centreX + viewportW / (2 * zoom),
+    y: -centreY + viewportH / (2 * zoom),
     zoom,
   });
 
@@ -163,8 +163,8 @@ export async function exportCanvasAsPdf(
   const centreY = boundingBox.minY + boundingBox.height / 2;
 
   setCamera({
-    x: centreX - viewportW / (2 * zoom),
-    y: centreY - viewportH / (2 * zoom),
+    x: -centreX + viewportW / (2 * zoom),
+    y: -centreY + viewportH / (2 * zoom),
     zoom,
   });
 
