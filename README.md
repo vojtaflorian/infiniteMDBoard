@@ -4,23 +4,33 @@ Infinite canvas markdown board — create, organize, and connect markdown notes 
 
 ## Features
 
-<!-- Keep in sync with APP_FEATURES in src/lib/config.ts -->
-
-- **Markdown blocks** — full GFM support (tables, checkboxes, code blocks) with live preview
-- **Image blocks** — URL or drag-and-drop, optional click-through link
-- **Link preview blocks** — auto-fetches title, description, favicon, OG image
-- **Sticky notes & frames** — colored notes (5 colors) and frames that group child blocks
-- **Block shapes & colors** — rectangle, oval, diamond, parallelogram for flowcharts
-- **Arrow connections** — editable labels and styles (arrow, bidirectional, blocker)
-- **Embed mode** — toggle link blocks between preview and iframe (YouTube/Vimeo auto-detect)
-- **AI tools** — per-block formatting, CZ↔EN translation, and custom prompts via Gemini
-- **Search, minimap & zoom** — Cmd+F search, minimap, infinite pan & zoom (scroll, pinch, double-click)
-- **Export** — JSON (single / all), PNG, PDF
-- **Undo / redo** — Ctrl+Z / Ctrl+Shift+Z with full history
-- **Multi-select & duplicate** — Shift+click, Ctrl+D, drag via grip or Space+click
-- **Presentation mode** — fullscreen with hidden UI, Esc to exit
-- **Dark & light theme**
-- **Multiple projects** — auto-save to localStorage, import/export
+- **Text blocks** with full Markdown support (GFM: tables, checkboxes, code blocks)
+- **Image blocks** (URL or drag-and-drop from OS, drop on existing image block to replace)
+- **Link preview blocks** (paste URL → auto-fetches title, description, favicon, OG image)
+- **Sticky notes** (colored notes: yellow, pink, green, blue, purple)
+- **Block shapes** — rectangle (default), oval, diamond, parallelogram — turn any block into a flowchart element
+- **Frames** — named sections that group and move child blocks together, with optional colored borders
+- **Arrow connections** between blocks with editable labels and connection types (arrow, bidirectional, blocker)
+- **Embed mode** on link blocks — toggle between preview card and iframe (YouTube/Vimeo auto-detect)
+- **Block search** (Cmd+F) — live filtering with jump-to-block
+- **Minimap** — overview panel with click-to-navigate
+- **Block drag** via left-side grip handle or Spacebar+click anywhere on block
+- **Editable project name** on canvas (click to rename)
+- **Infinite canvas** with pan & zoom:
+  - Ctrl+scroll / trackpad pinch = zoom
+  - Scroll / trackpad two-finger = pan
+  - Double-click empty space = zoom in
+  - Floating +/−/Fit All controls
+- **Multiple projects** with auto-save (localStorage)
+- **JSON export/import** (single project or all)
+- **PNG/PDF export** — export entire board as image or PDF
+- **Block duplication** — duplicate any block with one click or Ctrl+D
+- **Multi-select** — Shift+click to select multiple blocks, Delete to remove, Ctrl+D to duplicate all
+- **AI Format** — per-block Sparkles button to clean up markdown via Gemini 2.5 Flash Lite
+- **AI Translate** — per-block translate button (CZ↔EN bidirectional) via Gemini
+- **Undo/Redo** (Ctrl+Z / Ctrl+Shift+Z)
+- **Presentation mode** — fullscreen with hidden UI (toolbar, minimap, controls), Esc to exit
+- **Dark/Light theme**
 
 ## Tech Stack
 

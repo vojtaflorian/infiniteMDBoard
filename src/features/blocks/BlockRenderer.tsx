@@ -258,7 +258,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             if (block.type === "text") {
               const lines = block.content.split("\n");
               const maxLineLen = Math.max(...lines.map((l) => l.length));
-              const fitWidth = Math.min(600, Math.max(250, maxLineLen * 7 + 40));
+              const fitWidth = Math.min(1200, Math.max(250, maxLineLen * 7 + 40));
               updateBlock(block.id, { width: fitWidth, height: 0 });
             } else {
               updateBlock(block.id, { height: 0 });

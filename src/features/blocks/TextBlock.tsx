@@ -22,6 +22,7 @@ import {
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { createLogger } from "@/lib/logger";
+import { createHighlightComponents } from "@/lib/highlight";
 import type { Block } from "@/types";
 
 const log = createLogger("TextBlock");
@@ -93,7 +94,12 @@ function preprocessHtml(html: string): string {
 export function TextBlock({ block, isEditing }: TextBlockProps) {
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const { isDarkMode } = useUIStore();
+  const searchQuery = useUIStore((s) => s.searchQuery);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const highlightComponents = useMemo(
+    () => createHighlightComponents(searchQuery),
+    [searchQuery],
+  );
 
   const turndown = useMemo(() => {
     const td = new TurndownService({
@@ -167,7 +173,7 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
       // Auto-fit width based on content
       const lines = md.split("\n");
       const maxLineLen = Math.max(...lines.map((l) => l.length));
-      const fitWidth = Math.min(600, Math.max(block.width, maxLineLen * 7 + 40));
+      const fitWidth = Math.min(1200, Math.max(block.width, maxLineLen * 7 + 40));
       updateBlock(block.id, { content: newText, ...(fitWidth !== block.width && { width: fitWidth }) });
 
       const cursorPos = start + md.length;
@@ -275,7 +281,7 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
         isDarkMode ? "prose-invert text-zinc-300" : "text-slate-700"
       } cursor-text`}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={highlightComponents}>
         {block.content}
       </ReactMarkdown>
     </div>

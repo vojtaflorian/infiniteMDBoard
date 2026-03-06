@@ -1,6 +1,8 @@
 "use client";
 
 import { useCanvasStore } from "@/stores/canvasStore";
+import { useUIStore } from "@/stores/uiStore";
+import { highlightText } from "@/lib/highlight";
 import type { Block } from "@/types";
 
 interface StickyBlockProps {
@@ -10,6 +12,7 @@ interface StickyBlockProps {
 
 export function StickyBlock({ block, isEditing }: StickyBlockProps) {
   const updateBlock = useCanvasStore((s) => s.updateBlock);
+  const searchQuery = useUIStore((s) => s.searchQuery);
 
   if (isEditing) {
     return (
@@ -25,7 +28,7 @@ export function StickyBlock({ block, isEditing }: StickyBlockProps) {
 
   return (
     <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-800">
-      {block.content || <span className="opacity-40">Empty note</span>}
+      {block.content ? highlightText(block.content, searchQuery) : <span className="opacity-40">Empty note</span>}
     </p>
   );
 }
