@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { decrypt } from "@/lib/encryption";
+import { APP_ID } from "@/lib/config";
+import { ENCRYPTION_KEY } from "@/lib/env";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api/format");
@@ -19,11 +23,39 @@ const SYSTEM_PROMPT = `You are a markdown formatting expert. Your task is to con
 - Output ONLY the formatted markdown — no preamble, no explanation, no commentary of any kind`;
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     return NextResponse.json(
-      { error: "GEMINI_API_KEY not configured" },
+      { error: "Sign in and set your Gemini API key in profile" },
       { status: 401 },
+    );
+  }
+
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("gemini_api_key")
+    .eq("user_id", user.id)
+    .eq("app_id", APP_ID)
+    .single();
+
+  if (!profile?.gemini_api_key) {
+    return NextResponse.json(
+      { error: "Set your Gemini API key in profile settings" },
+      { status: 401 },
+    );
+  }
+
+  let apiKey: string;
+  try {
+    apiKey = decrypt(profile.gemini_api_key, ENCRYPTION_KEY);
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to decrypt API key" },
+      { status: 500 },
     );
   }
 

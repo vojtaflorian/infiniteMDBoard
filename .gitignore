@@ -46,3 +46,12 @@ docs/plans/
 # symlinked node_modules
 node_modules.nosync/
 .next.nosync/
+
+# supabase local state
+supabase/.temp/
+
+# stale next builds
+.next */
+
+# editor
+.vscode/

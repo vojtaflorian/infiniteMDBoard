@@ -6,6 +6,7 @@ import { useCanvasStore } from "@/stores/canvasStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useUIStore } from "@/stores/uiStore";
 import { Canvas } from "@/features/canvas/Canvas";
+import { useCloudSync } from "@/hooks/useCloudSync";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("CanvasPage");
@@ -23,6 +24,8 @@ export default function CanvasPage({
   const saveActiveProject = useProjectStore((s) => s.saveActiveProject);
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const isDarkMode = useUIStore((s) => s.isDarkMode);
+
+  useCloudSync(projectId);
 
   const saveNow = () => {
     const data = useCanvasStore.getState().toProjectData();

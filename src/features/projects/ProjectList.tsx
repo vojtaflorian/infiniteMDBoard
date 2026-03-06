@@ -1,14 +1,19 @@
 "use client";
 
-import { Plus, Upload, Download } from "lucide-react";
+import { Plus, Upload, Download, LogIn, User, Cloud } from "lucide-react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useAuthStore } from "@/stores/authStore";
 import { ProjectCard } from "./ProjectCard";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { importProjectFromJson, importAllFromJson, downloadJson } from "@/lib/storage";
+import { fetchProjects, type CloudProject } from "@/lib/supabase/projects";
 import { createLogger } from "@/lib/logger";
 import { APP_VERSION, APP_NAME, APP_TAGLINE, APP_FEATURES } from "@/lib/config";
+import { AuthModal } from "@/features/auth/AuthModal";
+import { ProfileModal } from "@/features/auth/ProfileModal";
+import { ImportDialog } from "@/features/auth/ImportDialog";
 
 const log = createLogger("ProjectList");
 
@@ -21,9 +26,34 @@ export function ProjectList() {
     duplicateProject,
     renameProject,
     importProject,
+    mergeCloudProjects,
   } = useProjectStore();
   const isDarkMode = useUIStore((s) => s.isDarkMode);
+  const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [cloudSynced, setCloudSynced] = useState(false);
+
+  // Load cloud projects on login
+  useEffect(() => {
+    if (!user || !initialized || cloudSynced) return;
+    let cancelled = false;
+    (async () => {
+      const cloudProjects = await fetchProjects();
+      if (cancelled) return;
+
+      const { hasLocalOnly } = mergeCloudProjects(cloudProjects);
+      if (hasLocalOnly) {
+        setImportDialogOpen(true);
+      }
+
+      setCloudSynced(true);
+    })();
+    return () => { cancelled = true; };
+  }, [user, initialized, cloudSynced, mergeCloudProjects]);
 
   const handleNewProject = () => {
     const name = window.prompt("Project name:", "Untitled Project");
@@ -75,7 +105,12 @@ export function ProjectList() {
         <div className="mb-10">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-3xl font-bold">infiniteMDBoard</h1>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+            {user && (
+              <span className="flex items-center gap-1 text-xs opacity-40 mr-2">
+                <Cloud size={12} /> Cloud
+              </span>
+            )}
             <button
               onClick={handleExportAll}
               className={`p-2 rounded-lg transition-all ${
@@ -102,6 +137,36 @@ export function ProjectList() {
               onChange={handleImport}
               className="hidden"
             />
+            {user ? (
+              <button
+                onClick={() => setProfileOpen(true)}
+                className={`p-2 rounded-lg transition-all ${
+                  isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-200"
+                }`}
+                title={user.email ?? "Profile"}
+              >
+                {user.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt=""
+                    className="w-5 h-5 rounded-full"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <User size={20} />
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className={`p-2 rounded-lg transition-all text-blue-400 ${
+                  isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-200"
+                }`}
+                title="Sign in"
+              >
+                <LogIn size={20} />
+              </button>
+            )}
           </div>
           </div>
           <p className={`text-sm mb-4 ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
@@ -147,6 +212,10 @@ export function ProjectList() {
           {APP_NAME} v{APP_VERSION}
         </footer>
       </div>
+
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ImportDialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)} />
     </div>
   );
 }

@@ -6,6 +6,14 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("projectStore");
 
+interface CloudProjectInput {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  data: Pick<Project, "blocks" | "connections" | "camera">;
+}
+
 interface ProjectState {
   projects: Project[];
   activeProjectId: string | null;
@@ -20,6 +28,10 @@ interface ProjectState {
   getProject: (id: string) => Project | undefined;
   setActiveProject: (id: string | null) => void;
   importProject: (project: Project) => string;
+  mergeCloudProjects: (cloudProjects: CloudProjectInput[]) => {
+    merged: number;
+    hasLocalOnly: boolean;
+  };
 }
 
 function createEmptyProject(name: string): Project {
@@ -107,6 +119,34 @@ export const useProjectStore = create<ProjectState>()(
         log.info("Imported project", newProject.id, newProject.name);
         set((s) => ({ projects: [...s.projects, newProject] }));
         return newProject.id;
+      },
+
+      mergeCloudProjects: (cloudProjects) => {
+        const localIds = new Set(get().projects.map((p) => p.id));
+        const toAdd: Project[] = [];
+
+        for (const cp of cloudProjects) {
+          if (!localIds.has(cp.id)) {
+            toAdd.push({
+              id: cp.id,
+              name: cp.name,
+              createdAt: cp.created_at,
+              updatedAt: cp.updated_at,
+              blocks: cp.data.blocks ?? [],
+              connections: cp.data.connections ?? [],
+              camera: cp.data.camera ?? { x: 0, y: 0, zoom: 1 },
+            });
+          }
+        }
+
+        if (toAdd.length > 0) {
+          log.info("Merged cloud projects", toAdd.length);
+          set((s) => ({ projects: [...s.projects, ...toAdd] }));
+        }
+
+        const hasLocalOnly =
+          get().projects.length > 0 && cloudProjects.length === 0;
+        return { merged: toAdd.length, hasLocalOnly };
       },
     }),
     { name: "infiniteMDBoard_projects" },

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AuthProvider } from "@/features/auth/AuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
-        <ErrorBoundary>{children}</ErrorBoundary>
+        <AuthProvider>
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -18,13 +18,20 @@ import {
   Upload,
   FileImage,
   FileText,
+  Share2,
+  User,
+  LogIn,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "next/navigation";
 import { createLogger } from "@/lib/logger";
+import { AuthModal } from "@/features/auth/AuthModal";
+import { ProfileModal } from "@/features/auth/ProfileModal";
+import { ShareDialog } from "@/features/share/ShareDialog";
 import {
   downloadJson,
   exportCanvasAsPng,
@@ -48,8 +55,12 @@ export function Toolbar() {
   const getProject = useProjectStore((s) => s.getProject);
   const renameProject = useProjectStore((s) => s.renameProject);
   const projectName = activeProjectId ? getProject(activeProjectId)?.name ?? "" : "";
+  const user = useAuthStore((s) => s.user);
   const [isEditingName, setIsEditingName] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // Close export dropdown on outside click
   useEffect(() => {
@@ -306,6 +317,54 @@ export function Toolbar() {
       >
         {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
       </button>
+      <div className="w-px h-8 bg-white/10 mx-1 self-center" />
+
+      {user && (
+        <button
+          onClick={() => setShareOpen(true)}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+          title="Share project"
+        >
+          <Share2 size={20} />
+        </button>
+      )}
+
+      {user ? (
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+          title={user.email ?? "Profile"}
+        >
+          {user.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt=""
+              className="w-5 h-5 rounded-full"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <User size={20} />
+          )}
+        </button>
+      ) : (
+        <button
+          onClick={() => setAuthModalOpen(true)}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-blue-400"
+          title="Sign in"
+        >
+          <LogIn size={20} />
+        </button>
+      )}
+
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
+      {activeProjectId && (
+        <ShareDialog
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          projectId={activeProjectId}
+        />
+      )}
     </div>
   );
 }

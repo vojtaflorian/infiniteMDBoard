@@ -1,5 +1,6 @@
-export const APP_VERSION = "2.10.6";
+export const APP_VERSION = "3.0.1";
 export const APP_NAME = "infiniteMDBoard";
+export const APP_ID = "infiniteMDBoard";
 
 // --- Zoom ---
 export const ZOOM_MIN = 0.1;
@@ -33,4 +34,8 @@ export const APP_FEATURES: { short: string; detail: string }[] = [
   { short: "Presentation mode", detail: "Fullscreen presentation mode with hidden UI, Esc to exit" },
   { short: "Dark & light theme", detail: "Dark and light theme toggle" },
   { short: "Multiple projects with auto-save", detail: "Multiple projects with auto-save to localStorage" },
+  { short: "User accounts", detail: "Sign in with Google or magic link to sync projects across devices" },
+  { short: "Cloud storage", detail: "Auto-sync projects to the cloud with localStorage as instant cache" },
+  { short: "Project sharing", detail: "Share projects via link — recipients get their own independent copy" },
+  { short: "Per-user AI key", detail: "Bring your own Gemini API key, stored encrypted in your profile" },
 ];
