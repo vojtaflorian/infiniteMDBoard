@@ -168,24 +168,19 @@ export function Toolbar() {
   );
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl">
-      <button
-        onClick={handleBack}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="Back to projects"
-      >
-        <ArrowLeft size={20} />
-      </button>
-      {activeProjectId && (
-        isEditingName ? (
+    <>
+    {/* Project name floating below toolbar */}
+    {activeProjectId && (
+      <div className="absolute top-[72px] left-1/2 -translate-x-1/2 z-40">
+        {isEditingName ? (
           <input
             autoFocus
-            className={`text-sm font-semibold bg-transparent outline-none border-b px-2 py-0.5 self-center ${
+            className={`text-sm font-semibold bg-transparent outline-none border-b px-3 py-1 text-center ${
               isDarkMode
-                ? "text-zinc-300 border-zinc-600 focus:border-zinc-400"
-                : "text-slate-600 border-slate-300 focus:border-slate-500"
+                ? "text-zinc-200 border-zinc-500 focus:border-zinc-300"
+                : "text-slate-700 border-slate-400 focus:border-slate-600"
             }`}
-            style={{ minWidth: "80px", width: `${Math.max(projectName.length, 6)}ch` }}
+            style={{ minWidth: "120px", width: `${Math.max(projectName.length, 8)}ch` }}
             value={projectName}
             onChange={(e) => renameProject(activeProjectId, e.target.value)}
             onMouseDown={(e) => e.stopPropagation()}
@@ -197,7 +192,7 @@ export function Toolbar() {
         ) : (
           <button
             onClick={() => setIsEditingName(true)}
-            className={`text-sm font-semibold px-2 py-0.5 rounded transition-colors max-w-[120px] truncate ${
+            className={`text-sm font-semibold px-3 py-1 rounded-lg transition-colors ${
               isDarkMode
                 ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
                 : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/60"
@@ -206,8 +201,18 @@ export function Toolbar() {
           >
             {projectName}
           </button>
-        )
-      )}
+        )}
+      </div>
+    )}
+
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl">
+      <button
+        onClick={handleBack}
+        className="p-3 rounded-xl hover:bg-white/10 transition-all"
+        title="Back to projects"
+      >
+        <ArrowLeft size={20} />
+      </button>
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
       {toolButton("select", <MousePointer2 size={20} />, "Select tool")}
@@ -357,14 +362,31 @@ export function Toolbar() {
       )}
 
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
-      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
-      {activeProjectId && (
-        <ShareDialog
-          open={shareOpen}
-          onClose={() => setShareOpen(false)}
-          projectId={activeProjectId}
-        />
-      )}
     </div>
+
+    {/* Profile dropdown — below toolbar, right-aligned */}
+    {profileOpen && (
+      <div className="fixed inset-0 z-[60]" onClick={() => setProfileOpen(false)}>
+        <div
+          className="absolute top-[72px] right-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} inline />
+        </div>
+      </div>
+    )}
+
+    {/* Share dropdown — below toolbar, right-aligned */}
+    {shareOpen && activeProjectId && (
+      <div className="fixed inset-0 z-[60]" onClick={() => setShareOpen(false)}>
+        <div
+          className="absolute top-[72px] right-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} projectId={activeProjectId} inline />
+        </div>
+      </div>
+    )}
+    </>
   );
 }

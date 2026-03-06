@@ -19,6 +19,7 @@ export function ImportDialog({ open, onClose }: ImportDialogProps) {
   const [importing, setImporting] = useState(false);
   const [done, setDone] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
 
   if (!open || !user) return null;
 
@@ -26,16 +27,19 @@ export function ImportDialog({ open, onClose }: ImportDialogProps) {
 
   const handleImport = async () => {
     setImporting(true);
-    let count = 0;
+    let ok = 0;
+    let fail = 0;
     for (const project of projects) {
       const success = await upsertProject(project.id, project.name, {
         blocks: project.blocks,
         connections: project.connections,
         camera: project.camera,
       });
-      if (success) count++;
+      if (success) ok++;
+      else fail++;
     }
-    setImportedCount(count);
+    setImportedCount(ok);
+    setFailedCount(fail);
     setImporting(false);
     setDone(true);
   };
@@ -65,11 +69,19 @@ export function ImportDialog({ open, onClose }: ImportDialogProps) {
 
         {done ? (
           <div className="text-center py-4">
-            <p className="font-medium">Import complete!</p>
+            <p className="font-medium">
+              {failedCount === 0 ? "Import complete!" : "Import finished with errors"}
+            </p>
             <p className="text-sm opacity-70 mt-1">
               {importedCount} project{importedCount !== 1 ? "s" : ""} synced to
               the cloud.
             </p>
+            {failedCount > 0 && (
+              <p className="text-sm text-red-400 mt-1">
+                {failedCount} project{failedCount !== 1 ? "s" : ""} failed
+                (check console for details).
+              </p>
+            )}
             <button
               onClick={onClose}
               className="mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm"

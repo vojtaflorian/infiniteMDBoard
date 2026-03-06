@@ -6,7 +6,7 @@
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS projects (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id          text PRIMARY KEY,
   user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   app_id      text NOT NULL DEFAULT 'infiniteMDBoard',
   name        text NOT NULL,
@@ -35,6 +35,14 @@ CREATE INDEX IF NOT EXISTS idx_projects_share_token
   ON projects (share_token)
   WHERE share_token IS NOT NULL;
 
+-- Idempotent: drop existing policies before recreating
+DROP POLICY IF EXISTS projects_owner_select ON projects;
+DROP POLICY IF EXISTS projects_owner_insert ON projects;
+DROP POLICY IF EXISTS projects_owner_update ON projects;
+DROP POLICY IF EXISTS projects_owner_delete ON projects;
+DROP POLICY IF EXISTS projects_shared_read ON projects;
+DROP POLICY IF EXISTS profiles_owner_all ON user_profiles;
+
 -- ============================================================
 -- AUTO-UPDATE updated_at
 -- ============================================================
@@ -47,6 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS projects_updated_at ON projects;
 CREATE TRIGGER projects_updated_at
   BEFORE UPDATE ON projects
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

@@ -25,7 +25,7 @@ export default function CanvasPage({
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const isDarkMode = useUIStore((s) => s.isDarkMode);
 
-  useCloudSync(projectId);
+  const { syncError, dismissError } = useCloudSync(projectId);
 
   const saveNow = () => {
     const data = useCanvasStore.getState().toProjectData();
@@ -69,6 +69,17 @@ export default function CanvasPage({
       }`}
     >
       <Canvas />
+      {syncError && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-500/90 text-white text-sm shadow-lg backdrop-blur-sm max-w-lg">
+          <span className="flex-1">{syncError}</span>
+          <button
+            onClick={dismissError}
+            className="shrink-0 px-2 py-0.5 rounded-lg hover:bg-white/20 text-xs font-medium"
+          >
+            OK
+          </button>
+        </div>
+      )}
     </div>
   );
 }

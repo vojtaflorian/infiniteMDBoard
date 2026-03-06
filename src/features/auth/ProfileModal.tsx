@@ -9,9 +9,10 @@ import { X, Key, Eye, EyeOff, Trash2 } from "lucide-react";
 interface ProfileModalProps {
   open: boolean;
   onClose: () => void;
+  inline?: boolean;
 }
 
-export function ProfileModal({ open, onClose }: ProfileModalProps) {
+export function ProfileModal({ open, onClose, inline }: ProfileModalProps) {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const isDarkMode = useUIStore((s) => s.isDarkMode);
@@ -98,11 +99,7 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
     ? "border-zinc-600 bg-zinc-800"
     : "border-slate-300 bg-white";
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
-    >
+  const content = (
       <div
         className={`${bg} border rounded-xl p-6 w-full max-w-sm shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
@@ -201,6 +198,16 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
           Sign out
         </button>
       </div>
+  );
+
+  if (inline) return content;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
+      {content}
     </div>
   );
 }

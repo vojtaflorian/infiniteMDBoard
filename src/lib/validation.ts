@@ -26,7 +26,7 @@ export const blockSchema = z.object({
   width: z.number().finite().min(0),
   height: z.number().finite().min(0),
   title: z.string().max(255),
-  content: z.string().max(100_000),
+  content: z.string().max(1_000_000),
   zIndex: z.number().int().min(0),
   color: z.string().max(50).optional(),
   embed: z.boolean().optional(),

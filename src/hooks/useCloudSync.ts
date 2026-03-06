@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -15,6 +15,7 @@ export function useCloudSync(projectId: string) {
   const getProject = useProjectStore((s) => s.getProject);
   const lastVersionRef = useRef(0);
   const dirtyVersionRef = useRef(0);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Track data mutations via subscribe (no canvasStore modification needed)
   useEffect(() => {
@@ -42,7 +43,13 @@ export function useCloudSync(projectId: string) {
     const success = await upsertProject(projectId, project.name, data);
     if (success) {
       lastVersionRef.current = dirtyVersionRef.current;
+      setSyncError(null);
       log.debug("Synced to cloud", projectId);
+    } else {
+      setSyncError(
+        "Cloud sync failed — project may be too large. Changes are saved locally.",
+      );
+      log.error("Cloud sync failed", projectId);
     }
   }, [user, projectId, getProject]);
 
@@ -72,5 +79,7 @@ export function useCloudSync(projectId: string) {
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, [user, projectId, getProject]);
 
-  return { syncToCloud };
+  const dismissError = useCallback(() => setSyncError(null), []);
+
+  return { syncToCloud, syncError, dismissError };
 }

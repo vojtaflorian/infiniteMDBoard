@@ -159,26 +159,21 @@ export function ProjectList() {
             ) : (
               <button
                 onClick={() => setAuthModalOpen(true)}
-                className={`p-2 rounded-lg transition-all text-blue-400 ${
-                  isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-200"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all text-blue-400 border ${
+                  isDarkMode
+                    ? "border-blue-500/30 hover:bg-blue-500/10"
+                    : "border-blue-400/40 hover:bg-blue-50"
                 }`}
-                title="Sign in"
               >
-                <LogIn size={20} />
+                <LogIn size={14} />
+                Sign in
               </button>
             )}
           </div>
           </div>
-          <p className={`text-sm mb-4 ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
+          <p className={`text-sm ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
             {APP_TAGLINE}
           </p>
-          <div className={`flex flex-wrap gap-x-1 gap-y-1 text-xs ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
-            {APP_FEATURES.map((f, i) => (
-              <span key={f.short}>
-                {f.short}{i < APP_FEATURES.length - 1 && <span className="mx-1">·</span>}
-              </span>
-            ))}
-          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <button
@@ -208,7 +203,13 @@ export function ProjectList() {
           </p>
         )}
 
-        <footer className="mt-16 text-center text-xs opacity-30">
+        <div className={`mt-16 grid grid-cols-2 gap-x-8 gap-y-1 text-xs ${isDarkMode ? "text-zinc-600" : "text-slate-400"}`}>
+          {APP_FEATURES.map((f) => (
+            <span key={f.short}>• {f.short}</span>
+          ))}
+        </div>
+
+        <footer className="mt-6 text-center text-xs opacity-30">
           {APP_NAME} v{APP_VERSION}
         </footer>
       </div>
