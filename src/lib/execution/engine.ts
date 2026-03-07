@@ -90,6 +90,7 @@ export async function runSingleBlock(
     const decoder = new TextDecoder();
     let fullOutput = "";
     let buffer = "";
+    let tokens: { input: number; output: number } | undefined;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -110,6 +111,9 @@ export async function runSingleBlock(
             fullOutput += parsed.content;
             onStream?.(fullOutput);
           }
+          if (parsed.usage) {
+            tokens = parsed.usage;
+          }
           if (parsed.error) {
             store.setBlockExecution(block.id, "error", fullOutput || undefined, parsed.error);
             return;
@@ -120,7 +124,7 @@ export async function runSingleBlock(
       }
     }
 
-    store.setBlockExecution(block.id, "success", fullOutput);
+    store.setBlockExecution(block.id, "success", fullOutput, undefined, tokens);
   } catch (err) {
     if (signal?.aborted) {
       store.setBlockExecution(block.id, "idle");

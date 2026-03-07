@@ -92,6 +92,7 @@ export const blockSchema = z.object({
   executionError: z.string().max(10_000).optional(),
   executionDurationMs: z.number().int().min(0).optional(),
   executionStartedAt: z.number().int().min(0).optional(),
+  executionTokens: z.object({ input: z.number().int().min(0), output: z.number().int().min(0) }).optional(),
 });
 
 // --- Connection schema ---
