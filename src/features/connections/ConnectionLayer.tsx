@@ -5,7 +5,7 @@ import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { getArrowPath, getMidpoint } from "@/lib/geometry";
 import { Arrow } from "./Arrow";
-import type { ConnectionStyle, Position } from "@/types";
+import type { ConnectionStyle, LoopConfig, Position } from "@/types";
 
 const ARROW_COLOR_DARK = "#71717a";
 const ARROW_COLOR_LIGHT = "#94a3b8";
@@ -30,9 +30,10 @@ export function ConnectionLayer() {
           midpoint: getMidpoint(from, to),
           label: conn.label,
           connectionStyle: conn.style,
+          loopConfig: conn.loopConfig,
         };
       })
-      .filter(Boolean) as { id: string; path: string; midpoint: Position; label: string; connectionStyle?: ConnectionStyle }[];
+      .filter(Boolean) as { id: string; path: string; midpoint: Position; label: string; connectionStyle?: ConnectionStyle; loopConfig?: LoopConfig }[];
   }, [blocks, connections]);
 
   return (
@@ -79,6 +80,10 @@ export function ConnectionLayer() {
           <line x1="1" y1="1" x2="9" y2="9" stroke="#ef4444" strokeWidth="2" />
           <line x1="9" y1="1" x2="1" y2="9" stroke="#ef4444" strokeWidth="2" />
         </marker>
+        <marker id="loop-marker" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+          <path d="M6 2a4 4 0 1 1-1 7.9" fill="none" stroke={arrowColor} strokeWidth="1.5" />
+          <polygon points="3,8 6,10 5,7" fill={arrowColor} />
+        </marker>
       </defs>
       {arrowData.map((arrow) => (
         <Arrow
@@ -90,6 +95,7 @@ export function ConnectionLayer() {
           stroke={arrowColor}
           isDarkMode={isDarkMode}
           connectionStyle={arrow.connectionStyle}
+          loopConfig={arrow.loopConfig}
         />
       ))}
     </svg>

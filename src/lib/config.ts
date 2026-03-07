@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.0.2";
+export const APP_VERSION = "3.1.0";
 export const APP_NAME = "infiniteMDBoard";
 export const APP_ID = "infiniteMDBoard";
 
@@ -16,7 +16,7 @@ export const FIT_ALL_PADDING = 100;
 
 // --- Features (used in landing page + README) ---
 export const APP_TAGLINE =
-  "Infinite canvas for markdown notes, images, links, sticky notes and diagrams.";
+  "Infinite canvas for markdown notes, AI agent workflows, images, links, sticky notes and diagrams.";
 
 export const APP_FEATURES: { short: string; detail: string }[] = [
   { short: "Markdown blocks with live preview", detail: "Text blocks with full Markdown support (GFM: tables, checkboxes, code blocks)" },
@@ -38,4 +38,8 @@ export const APP_FEATURES: { short: string; detail: string }[] = [
   { short: "Cloud storage", detail: "Auto-sync projects to the cloud with localStorage as instant cache" },
   { short: "Project sharing", detail: "Share projects via link — recipients get their own independent copy" },
   { short: "Per-user AI key", detail: "Bring your own Gemini API key, stored encrypted in your profile" },
+  { short: "AI Agent workflow builder", detail: "AI Agent blocks with configurable model, prompts, parameters, and streaming execution" },
+  { short: "Template references between blocks", detail: "{{alias.path}} references for data flow between AI blocks with autocomplete" },
+  { short: "Loop & debate connections", detail: "Loop connections with max iterations and JSON path conditions for multi-agent debates" },
+  { short: "Multi-provider AI support", detail: "OpenAI, Google Gemini, Anthropic, and any OpenAI-compatible API endpoint" },
 ];
