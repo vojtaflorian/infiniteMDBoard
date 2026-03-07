@@ -99,11 +99,13 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const aiMenuRef = useRef<HTMLDivElement>(null);
   const portDragging = useRef(false);
 
-  const handlePortPointerDown = useCallback((e: React.PointerEvent) => {
+  const handlePortPointerDown = useCallback((e: React.PointerEvent, side: "left" | "right") => {
     e.stopPropagation();
     e.preventDefault();
-    // Calculate port world position (right edge center of block)
-    const portX = block.position.x + block.width;
+    portDragging.current = true;
+    const portX = side === "right"
+      ? block.position.x + block.width
+      : block.position.x;
     const portY = block.position.y + (block.height > 0 ? block.height / 2 : 100);
     setPendingConnection({ fromId: block.id, fromX: portX, fromY: portY, toX: portX, toY: portY });
   }, [block.id, block.position.x, block.position.y, block.width, block.height, setPendingConnection]);
@@ -143,6 +145,12 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const handleMouseDown = (e: React.MouseEvent) => {
     // Presentation mode: no selection, editing, or connecting — just pass through
     if (presentationMode) return;
+    // Port drag is active — don't start block drag
+    if (portDragging.current) {
+      portDragging.current = false;
+      e.stopPropagation();
+      return;
+    }
 
     e.stopPropagation();
 
@@ -626,18 +634,20 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         <>
           {/* Input port — left edge */}
           <div
+            onPointerDown={(e) => handlePortPointerDown(e, "left")}
             onPointerUp={handleBlockPointerUp}
-            className={`absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-all cursor-crosshair z-10 ${
+            className={`absolute top-1/2 -translate-y-1/2 -left-3 w-6 h-6 rounded-full border-2 transition-all cursor-crosshair z-10 ${
               isDarkMode ? "bg-zinc-800 border-green-500" : "bg-white border-green-500"
-            } ${hasPendingConnection ? "opacity-100 ring-2 ring-green-400 scale-125" : "opacity-40 group-hover:opacity-100"}`}
-            title="Input"
+            } ${hasPendingConnection ? "opacity-100 ring-2 ring-green-400 scale-125" : "opacity-0 group-hover:opacity-100"}`}
+            title="Drag to connect"
           />
           {/* Output port — right edge */}
           <div
-            onPointerDown={handlePortPointerDown}
-            className={`absolute top-1/2 -right-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 opacity-40 group-hover:opacity-100 transition-opacity cursor-crosshair z-10 ${
+            onPointerDown={(e) => handlePortPointerDown(e, "right")}
+            onPointerUp={handleBlockPointerUp}
+            className={`absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-6 rounded-full border-2 transition-all cursor-crosshair z-10 ${
               isDarkMode ? "bg-zinc-800 border-blue-500" : "bg-white border-blue-500"
-            }`}
+            } ${hasPendingConnection ? "opacity-100 ring-2 ring-blue-400 scale-125" : "opacity-0 group-hover:opacity-100"}`}
             title="Drag to connect"
           />
         </>

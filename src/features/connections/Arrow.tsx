@@ -143,17 +143,18 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
           )}
         </foreignObject>
       )}
-      {/* Style picker + delete button on hover — centered on midpoint below label */}
+      {/* Connection controls on hover */}
       {hovered && !editing && (
         <foreignObject
-          x={midpoint.x - 55}
+          x={midpoint.x - (isAiConnection ? 14 : 55)}
           y={midpoint.y + 10}
-          width="110"
+          width={isAiConnection ? 28 : 110}
           height="24"
           style={{ overflow: "visible", pointerEvents: "auto" }}
         >
           <div className="flex items-center justify-center gap-1">
-            {(
+            {/* Full style picker only for non-AI connections */}
+            {!isAiConnection && (
               [
                 { style: "arrow" as ConnectionStyle, icon: ArrowRight, title: "Arrow" },
                 { style: "bidirectional" as ConnectionStyle, icon: ArrowLeftRight, title: "Bidirectional" },
@@ -187,7 +188,7 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
                 <Icon size={11} />
               </button>
             ))}
-            {(connectionStyle === "loop" || connectionStyle === "debate") && (
+            {!isAiConnection && (connectionStyle === "loop" || connectionStyle === "debate") && (
               <button
                 onClick={(e) => { e.stopPropagation(); setShowLoopConfig((v) => !v); }}
                 onMouseDown={(e) => e.stopPropagation()}
