@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, ArrowRight, ArrowLeftRight, Ban } from "lucide-react";
+import { Trash2, ArrowRight, ArrowLeftRight, Ban, RefreshCw, Settings } from "lucide-react";
 import { useCanvasStore } from "@/stores/canvasStore";
-import type { ConnectionStyle, Position } from "@/types";
+import type { ConnectionStyle, LoopConfig, Position } from "@/types";
 
 interface ArrowProps {
   id: string;
@@ -13,13 +13,15 @@ interface ArrowProps {
   stroke: string;
   isDarkMode: boolean;
   connectionStyle?: ConnectionStyle;
+  loopConfig?: LoopConfig;
 }
 
-export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, connectionStyle = "arrow" }: ArrowProps) {
+export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, connectionStyle = "arrow", loopConfig }: ArrowProps) {
   const deleteConnection = useCanvasStore((s) => s.deleteConnection);
   const updateConnection = useCanvasStore((s) => s.updateConnection);
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [showLoopConfig, setShowLoopConfig] = useState(false);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,14 +67,19 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
         stroke={
           connectionStyle === "blocker"
             ? "#ef4444"
-            : hovered
-              ? (isDarkMode ? "#a1a1aa" : "#64748b")
-              : stroke
+            : connectionStyle === "loop"
+              ? "#f97316"
+              : connectionStyle === "debate"
+                ? "#8b5cf6"
+                : hovered
+                  ? (isDarkMode ? "#a1a1aa" : "#64748b")
+                  : stroke
         }
         strokeWidth={hovered ? 3 : 2}
         fill="none"
-        markerEnd={connectionStyle === "blocker" ? "url(#blocker)" : "url(#arrowhead)"}
-        markerStart={connectionStyle === "bidirectional" ? "url(#arrowhead-start)" : undefined}
+        markerEnd={connectionStyle === "blocker" ? "url(#blocker)" : (connectionStyle === "loop" || connectionStyle === "debate") ? "url(#loop-marker)" : "url(#arrowhead)"}
+        markerStart={connectionStyle === "bidirectional" || connectionStyle === "debate" ? "url(#arrowhead-start)" : undefined}
+        strokeDasharray={connectionStyle === "loop" || connectionStyle === "debate" ? "6 3" : undefined}
       />
       {/* Label */}
       {(label || hovered) && (
@@ -133,6 +140,8 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
                 { style: "arrow" as ConnectionStyle, icon: ArrowRight, title: "Arrow" },
                 { style: "bidirectional" as ConnectionStyle, icon: ArrowLeftRight, title: "Bidirectional" },
                 { style: "blocker" as ConnectionStyle, icon: Ban, title: "Blocker" },
+                { style: "loop" as ConnectionStyle, icon: RefreshCw, title: "Loop" },
+                { style: "debate" as ConnectionStyle, icon: ArrowLeftRight, title: "Debate" },
               ] as const
             ).map(({ style: s, icon: Icon, title }) => (
               <button
@@ -160,6 +169,18 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
                 <Icon size={11} />
               </button>
             ))}
+            {(connectionStyle === "loop" || connectionStyle === "debate") && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowLoopConfig((v) => !v); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className={`w-5 h-5 flex items-center justify-center rounded-full ${
+                  isDarkMode ? "bg-zinc-700 hover:bg-zinc-600 text-zinc-300" : "bg-slate-300 hover:bg-slate-400 text-slate-700"
+                }`}
+                title="Loop settings"
+              >
+                <Settings size={11} />
+              </button>
+            )}
             <button
               onClick={handleDelete}
               onMouseDown={(e) => e.stopPropagation()}
@@ -168,6 +189,74 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
             >
               <Trash2 size={12} />
             </button>
+          </div>
+        </foreignObject>
+      )}
+      {/* Loop badge */}
+      {loopConfig?.enabled && (
+        <foreignObject
+          x={midpoint.x + 50}
+          y={midpoint.y - 10}
+          width="40"
+          height="20"
+          style={{ overflow: "visible", pointerEvents: "none" }}
+        >
+          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
+            isDarkMode ? "bg-orange-900/60 text-orange-400" : "bg-orange-100 text-orange-700"
+          }`}>
+            {loopConfig.maxIterations}x
+          </span>
+        </foreignObject>
+      )}
+      {/* Loop config panel */}
+      {showLoopConfig && (connectionStyle === "loop" || connectionStyle === "debate") && (
+        <foreignObject
+          x={midpoint.x - 100}
+          y={midpoint.y + 34}
+          width="200"
+          height="120"
+          style={{ overflow: "visible", pointerEvents: "auto" }}
+        >
+          <div
+            className={`p-2 rounded-lg border shadow-lg text-xs space-y-1.5 ${
+              isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-slate-200"
+            }`}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2">
+              <label className={`w-16 shrink-0 ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>Max iter</label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={loopConfig?.maxIterations ?? 3}
+                onChange={(e) => updateConnection(id, {
+                  style: connectionStyle,
+                  loopConfig: { enabled: true, maxIterations: Math.min(10, Math.max(1, parseInt(e.target.value) || 3)), condition: loopConfig?.condition },
+                })}
+                className={`flex-1 px-1.5 py-0.5 rounded border outline-none ${
+                  isDarkMode ? "bg-zinc-900 border-zinc-700 text-zinc-200" : "bg-slate-50 border-slate-200 text-slate-700"
+                }`}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className={`w-16 shrink-0 ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>JSON path</label>
+              <input
+                placeholder="$.done"
+                value={loopConfig?.condition?.jsonPath ?? ""}
+                onChange={(e) => updateConnection(id, {
+                  style: connectionStyle,
+                  loopConfig: {
+                    enabled: true,
+                    maxIterations: loopConfig?.maxIterations ?? 3,
+                    condition: e.target.value ? { jsonPath: e.target.value, operator: loopConfig?.condition?.operator ?? "eq", value: loopConfig?.condition?.value ?? true } : undefined,
+                  },
+                })}
+                className={`flex-1 px-1.5 py-0.5 rounded border outline-none font-mono ${
+                  isDarkMode ? "bg-zinc-900 border-zinc-700 text-zinc-200" : "bg-slate-50 border-slate-200 text-slate-700"
+                }`}
+              />
+            </div>
           </div>
         </foreignObject>
       )}

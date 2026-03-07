@@ -11,6 +11,10 @@ import { ImageBlock } from "./ImageBlock";
 import { LinkBlock } from "./LinkBlock";
 import { StickyBlock } from "./StickyBlock";
 import { FrameBlock } from "./FrameBlock";
+import { AIAgentBlock } from "./AIAgentBlock";
+import { AIInputBlock } from "./AIInputBlock";
+import { AIViewerBlock } from "./AIViewerBlock";
+import { ExecutionTimer } from "./ExecutionTimer";
 import type { Block, BlockShape } from "@/types";
 
 const log = createLogger("BlockRenderer");
@@ -216,6 +220,16 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       onMouseDownCapture={handleMouseDownCapture}
       onClickCapture={handleClickCapture}
     >
+      {/* Execution timing badge */}
+      {block.type.startsWith("ai-") && (block.executionState === "running" || block.executionDurationMs != null) && (
+        <ExecutionTimer
+          startedAt={block.executionStartedAt}
+          durationMs={block.executionDurationMs}
+          isRunning={block.executionState === "running"}
+          isDarkMode={isDarkMode}
+        />
+      )}
+
       {/* Title */}
       {presentationMode ? (
         block.title && (
@@ -394,7 +408,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       {/* Styling — bottom-left (hidden in presentation mode) */}
       {!presentationMode && <div className="absolute -bottom-3 -left-3 z-10 flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
         {/* Shape picker (all blocks except frame) */}
-        {block.type !== "frame" && (
+        {block.type !== "frame" && !block.type.startsWith("ai-") && (
           <>
             {shapeOptions.map(({ value, icon: Icon, label }) => (
               <button
@@ -462,6 +476,18 @@ export function BlockRenderer({ block }: BlockRendererProps) {
                 ? "ring-2 ring-blue-500/50 border-blue-500/30"
                 : "ring-2 ring-blue-400/50 border-blue-400/30"
               : ""
+        } ${
+          block.executionState === "running"
+            ? "ring-2 ring-blue-500/50 animate-pulse"
+            : block.executionState === "success"
+              ? "ring-2 ring-green-500/50"
+              : block.executionState === "error"
+                ? "ring-2 ring-red-500/50"
+                : ""
+        } ${
+          block.type === "ai-agent" ? "border-l-4 border-l-blue-500/70" :
+          block.type === "ai-input" ? "border-l-4 border-l-green-500/70" :
+          block.type === "ai-viewer" ? "border-l-4 border-l-purple-500/70" : ""
         } ${isEditing ? "shadow-xl" : "shadow-lg"} ${!isClipped ? "backdrop-blur-sm" : ""}`}
         style={{
           ...(block.type !== "text" && block.height > 0
@@ -483,6 +509,12 @@ export function BlockRenderer({ block }: BlockRendererProps) {
               return <StickyBlock block={block} isEditing={isEditing} />;
             case "frame":
               return <FrameBlock block={block} isEditing={isEditing} />;
+            case "ai-agent":
+              return <AIAgentBlock block={block} isEditing={isEditing} />;
+            case "ai-input":
+              return <AIInputBlock block={block} isEditing={isEditing} />;
+            case "ai-viewer":
+              return <AIViewerBlock block={block} isEditing={isEditing} />;
           }
         })()}
         {/* AI processing overlay */}

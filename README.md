@@ -25,6 +25,16 @@ Infinite canvas markdown board — create, organize, and connect markdown notes 
 - **Project sharing** — share via link, recipients get their own independent copy
 - **Per-user AI key** — Gemini API key stored encrypted (AES-256-GCM) in your profile
 
+### AI Workflow Builder
+
+- **AI Agent blocks** — configurable model, system/user prompts with `{{alias}}` template references, streaming execution
+- **Input blocks** — text, JSON, or file upload (images, PDF text extraction, CSV)
+- **Viewer blocks** — display output as plain text, JSON, Markdown, HTML, or image
+- **Multi-provider support** — OpenAI, Google Gemini, Anthropic, and any OpenAI-compatible endpoint
+- **Pipeline execution** — topological sort determines execution order, blocks run sequentially
+- **Loop & debate connections** — loop connections with max iterations and JSON path stop conditions
+- **API key management** — store multiple API keys per provider in localStorage
+
 ## Tech Stack
 
 Next.js 16 | React 19 | TypeScript | Zustand 5 | Tailwind CSS 4 | Supabase (Auth + Postgres) | Zod 4
@@ -69,12 +79,12 @@ Set the three environment variables in Vercel project settings.
 ```
 src/
 ├── app/                # Next.js App Router pages
-│   ├── api/            # API routes (format, profile, sync)
+│   ├── api/            # API routes (format, profile, sync, ai/*)
 │   ├── auth/           # OAuth callback
 │   └── share/          # Share page
 ├── features/           # Feature modules
 │   ├── auth/           # AuthModal, ProfileModal, ImportDialog
-│   ├── blocks/         # Text, image, link, sticky, frame blocks
+│   ├── blocks/         # Text, image, link, sticky, frame, AI agent/input/viewer blocks
 │   ├── canvas/         # Canvas, camera hooks, zoom controls
 │   ├── connections/    # SVG arrow rendering
 │   ├── projects/       # Dashboard & project cards
@@ -82,7 +92,7 @@ src/
 │   └── toolbar/        # Top toolbar
 ├── hooks/              # Custom hooks (useCloudSync)
 ├── stores/             # Zustand stores (canvas, project, auth, ui)
-├── lib/                # Utilities (supabase, encryption, validation, logger)
+├── lib/                # Utilities (supabase, encryption, validation, logger, execution engine)
 └── types/              # Shared TypeScript types
 ```
 

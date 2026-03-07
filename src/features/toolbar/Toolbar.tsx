@@ -21,6 +21,10 @@ import {
   Share2,
   User,
   LogIn,
+  Bot,
+  FileInput,
+  Eye,
+  Key,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -32,6 +36,7 @@ import { createLogger } from "@/lib/logger";
 import { AuthModal } from "@/features/auth/AuthModal";
 import { ProfileModal } from "@/features/auth/ProfileModal";
 import { ShareDialog } from "@/features/share/ShareDialog";
+import { ApiKeySettings } from "@/features/settings/ApiKeySettings";
 import {
   downloadJson,
   exportCanvasAsPng,
@@ -61,6 +66,7 @@ export function Toolbar() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
 
   // Close export dropdown on outside click
   useEffect(() => {
@@ -253,6 +259,28 @@ export function Toolbar() {
       >
         <Frame size={20} />
       </button>
+      <div className="w-px h-8 bg-white/10 mx-1 self-center" />
+      <button
+        onClick={() => handleAddBlock("ai-agent")}
+        className="p-3 rounded-xl hover:bg-white/10 transition-all text-blue-400"
+        title="Add AI Agent block"
+      >
+        <Bot size={20} />
+      </button>
+      <button
+        onClick={() => handleAddBlock("ai-input")}
+        className="p-3 rounded-xl hover:bg-white/10 transition-all text-green-400"
+        title="Add Input block"
+      >
+        <FileInput size={20} />
+      </button>
+      <button
+        onClick={() => handleAddBlock("ai-viewer")}
+        className="p-3 rounded-xl hover:bg-white/10 transition-all text-purple-400"
+        title="Add Viewer block"
+      >
+        <Eye size={20} />
+      </button>
       {toolButton(
         "connect",
         <ArrowRight size={20} />,
@@ -316,6 +344,13 @@ export function Toolbar() {
         )}
       </div>
       <button
+        onClick={() => setApiKeySettingsOpen(true)}
+        className="p-3 rounded-xl hover:bg-white/10 transition-all"
+        title="API Keys"
+      >
+        <Key size={20} />
+      </button>
+      <button
         onClick={toggleTheme}
         className="p-3 rounded-xl hover:bg-white/10 transition-all"
         title="Toggle theme"
@@ -362,6 +397,7 @@ export function Toolbar() {
       )}
 
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      {apiKeySettingsOpen && <ApiKeySettings open={apiKeySettingsOpen} onClose={() => setApiKeySettingsOpen(false)} />}
     </div>
 
     {/* Profile dropdown — below toolbar, right-aligned */}

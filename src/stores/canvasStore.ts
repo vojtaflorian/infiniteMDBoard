@@ -5,6 +5,7 @@ import type {
   BlockType,
   Camera,
   Connection,
+  ExecutionState,
   Position,
   Project,
   Tool,
@@ -51,6 +52,8 @@ interface CanvasState {
   setResizingBlock: (id: string | null) => void;
   setConnectingFrom: (id: string | null) => void;
   setIsPanning: (panning: boolean) => void;
+  setBlockExecution: (id: string, state: ExecutionState, output?: string, error?: string) => void;
+  clearBlockExecution: (id: string) => void;
   loadProject: (project: Project) => void;
   toProjectData: () => Pick<Project, "blocks" | "connections" | "camera">;
   reset: () => void;
@@ -81,17 +84,49 @@ export const useCanvasStore = create<CanvasState>()(
           link:   { title: "Link",   content: "", width: 280 },
           sticky: { title: "Note",   content: "", width: 180, color: "yellow" },
           frame:  { title: "Frame",  content: "", width: 600, height: 400 },
+          "ai-agent": {
+            title: "AI Agent",
+            content: "",
+            width: 350,
+            height: 0,
+            aiConfig: {
+              provider: "openai",
+              model: "",
+              apiKeyId: "",
+              systemPrompt: "",
+              userPrompt: "",
+              temperature: 1,
+              maxTokens: 4096,
+              responseFormat: "text",
+            },
+          },
+          "ai-input": {
+            title: "Input",
+            content: "",
+            width: 300,
+            height: 0,
+            inputConfig: { format: "text" },
+          },
+          "ai-viewer": {
+            title: "Viewer",
+            content: "",
+            width: 400,
+            height: 300,
+            viewerConfig: { renderMode: "text" },
+          },
         };
         const d = defaults[type];
+        const { width: _w, title: _t, content: _c, color: _co, ...extraDefaults } = d;
         const block: Block = {
           id: generateId(),
           type,
           position,
           width: d.width ?? 250,
-          height: 0,
+          height: d.height ?? 0,
           title: d.title ?? "",
           content: d.content ?? "",
           color: d.color,
+          ...extraDefaults,
           zIndex: get().blocks.length + 1,
           ...initial,
         };
@@ -248,6 +283,38 @@ export const useCanvasStore = create<CanvasState>()(
       setResizingBlock: (id) => set({ resizingBlockId: id }),
       setConnectingFrom: (id) => set({ connectingFromId: id }),
       setIsPanning: (panning) => set({ isPanning: panning }),
+
+      setBlockExecution: (id, executionState, executionOutput, executionError) => {
+        set((s) => ({
+          blocks: s.blocks.map((b) => {
+            if (b.id !== id) return b;
+            const updates: Partial<Block> = {
+              executionState,
+              executionOutput: executionOutput ?? b.executionOutput,
+              executionError: executionState === "error" ? (executionError ?? b.executionError) : undefined,
+            };
+            if (executionState === "running") {
+              updates.executionStartedAt = Date.now();
+              updates.executionDurationMs = undefined;
+            } else if (executionState === "success" || executionState === "error") {
+              updates.executionDurationMs = b.executionStartedAt
+                ? Date.now() - b.executionStartedAt
+                : undefined;
+            }
+            return { ...b, ...updates };
+          }),
+        }));
+      },
+
+      clearBlockExecution: (id) => {
+        set((s) => ({
+          blocks: s.blocks.map((b) =>
+            b.id === id
+              ? { ...b, executionState: undefined, executionOutput: undefined, executionError: undefined, executionDurationMs: undefined, executionStartedAt: undefined }
+              : b,
+          ),
+        }));
+      },
 
       loadProject: (project) => {
         log.info("Loaded project", project.id);
