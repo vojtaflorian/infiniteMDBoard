@@ -7,6 +7,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { getBlockAlias } from "@/lib/execution/templateResolver";
 import { getApiKeys } from "@/lib/apiKeyStore";
 import { runSingleBlock, runPipeline } from "@/lib/execution/engine";
+import { TemplatePreviewOverlay } from "./TemplatePreviewOverlay";
 import type { AIConfig, AIProvider, Block } from "@/types";
 
 interface AIAgentBlockProps {
@@ -52,6 +53,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
   const [streamingText, setStreamingText] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const schemaTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const userPromptRef = useRef<HTMLTextAreaElement | null>(null);
   const [copied, setCopied] = useState(false);
 
   const copyAlias = (e: React.MouseEvent) => {
@@ -137,74 +139,38 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
 
   // --- COLLAPSED VIEW ---
   if (!showExpanded) {
+    const PROVIDER_COLORS: Record<string, string> = { openai: "bg-emerald-500", google: "bg-amber-500", anthropic: "bg-orange-700", custom: "bg-zinc-500" };
+    const promptPreview = (config.userPrompt || config.systemPrompt || "").split("\n")[0].slice(0, 60);
     return (
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={copyAlias}
-            onMouseDown={(e) => e.stopPropagation()}
-            className={`text-[10px] font-mono px-1.5 py-0.5 rounded cursor-copy transition-colors ${
-              copied
-                ? "bg-green-600/30 text-green-400"
-                : isDarkMode ? "bg-blue-900/50 text-blue-400 hover:bg-blue-900/70" : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-            }`}
-            title="Click to copy reference"
-          >
-            {copied ? "Copied!" : `{{${alias}}}`}
-          </button>
-          <div className="flex items-center gap-1.5">
-            {config.model && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                isDarkMode ? "bg-zinc-800 text-zinc-400" : "bg-slate-100 text-slate-500"
-              }`}>
-                {config.model}
-              </span>
-            )}
-            {statusIcon()}
-          </div>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 min-h-[24px]">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${PROVIDER_COLORS[config.provider] ?? "bg-zinc-500"}`} title={config.provider} />
+          {config.model && (
+            <span className={`text-[11px] font-medium shrink-0 ${isDarkMode ? "text-zinc-300" : "text-slate-600"}`}>
+              {config.model}
+            </span>
+          )}
+          {promptPreview && (
+            <span className={`text-[11px] truncate ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+              {promptPreview}
+            </span>
+          )}
+          <span className="ml-auto shrink-0">
+            {block.executionState === "running"
+              ? <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block" />
+              : block.executionState === "success"
+                ? <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                : block.executionState === "error"
+                  ? <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                  : null}
+          </span>
         </div>
-        {config.userPrompt && (
-          <p className={`text-xs line-clamp-3 ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
-            {config.userPrompt}
-          </p>
-        )}
         {block.executionOutput && (
-          <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
-            Output: {(block.executionOutput.length / 1000).toFixed(1)}k chars
-            {block.executionTokens && (
-              <span className="ml-2">
-                ({block.executionTokens.input + block.executionTokens.output} tok)
-              </span>
-            )}
-          </p>
+          <div className={`text-[10px] ${isDarkMode ? "text-zinc-600" : "text-slate-400"}`}>
+            {(block.executionOutput.length / 1000).toFixed(1)}k chars
+            {block.executionTokens && ` · ${block.executionTokens.input + block.executionTokens.output} tok`}
+          </div>
         )}
-        <div className="flex gap-1">
-          <button
-            onClick={handleRun}
-            onMouseDown={(e) => e.stopPropagation()}
-            className={`flex-1 flex items-center justify-center gap-1 py-1 rounded text-xs font-medium transition-colors ${
-              block.executionState === "running"
-                ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                : isDarkMode
-                  ? "bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
-                  : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-            }`}
-          >
-            {block.executionState === "running" ? <><Square size={12} /> Stop</> : <><Play size={12} /> Run</>}
-          </button>
-          <button
-            onClick={handleRunPipeline}
-            onMouseDown={(e) => e.stopPropagation()}
-            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
-              isDarkMode
-                ? "bg-purple-600/20 text-purple-400 hover:bg-purple-600/30"
-                : "bg-purple-100 text-purple-600 hover:bg-purple-200"
-            }`}
-            title="Run pipeline from this block"
-          >
-            <PlayCircle size={12} /> Pipeline
-          </button>
-        </div>
       </div>
     );
   }
@@ -290,13 +256,17 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
             rows={2}
           />
           <label className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>User prompt</label>
-          <textarea
-            value={config.userPrompt}
-            onChange={(e) => updateConfig({ userPrompt: e.target.value })}
-            placeholder="Analyze {{input_1}} and..."
-            className={`${inputClass} min-h-[60px] resize-y font-mono`}
-            rows={4}
-          />
+          <div className="relative">
+            <textarea
+              ref={userPromptRef}
+              value={config.userPrompt}
+              onChange={(e) => updateConfig({ userPrompt: e.target.value })}
+              placeholder="Analyze {{input_1}} and..."
+              className={`${inputClass} min-h-[60px] resize-y font-mono`}
+              rows={4}
+            />
+            <TemplatePreviewOverlay textareaRef={userPromptRef} />
+          </div>
         </div>
       )}
 

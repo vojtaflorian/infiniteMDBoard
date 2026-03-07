@@ -117,29 +117,31 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
   return (
     <div className="space-y-2">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-          isDarkMode ? "bg-green-900/50 text-green-400" : "bg-green-100 text-green-700"
-        }`}>
-          {`{{${alias}}}`}
-        </span>
-        <div className="flex gap-1">
-          {(["text", "json", "file"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={(e) => { e.stopPropagation(); handleFormatToggle(f); }}
-              onMouseDown={(e) => e.stopPropagation()}
-              className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
-                config.format === f
-                  ? isDarkMode ? "bg-green-800 text-green-200" : "bg-green-200 text-green-800"
-                  : isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
-              }`}
-            >
-              {f.toUpperCase()}
-            </button>
-          ))}
+      {showExpanded && (
+        <div className="flex items-center justify-between">
+          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+            isDarkMode ? "bg-green-900/50 text-green-400" : "bg-green-100 text-green-700"
+          }`}>
+            {`{{${alias}}}`}
+          </span>
+          <div className="flex gap-1">
+            {(["text", "json", "file"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={(e) => { e.stopPropagation(); handleFormatToggle(f); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
+                  config.format === f
+                    ? isDarkMode ? "bg-green-800 text-green-200" : "bg-green-200 text-green-800"
+                    : isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                {f.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* File mode */}
       {config.format === "file" ? (
@@ -209,12 +211,16 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
           )}
         </div>
       ) : (
-        <div className={`text-sm font-mono whitespace-pre-wrap break-words ${
-          isDarkMode ? "text-zinc-300" : "text-slate-700"
-        }`}>
-          {block.content || (
-            <span className={isDarkMode ? "text-zinc-600" : "text-slate-400"}>No data — click to edit</span>
-          )}
+        <div className="flex items-center gap-2 min-h-[24px]">
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
+            isDarkMode ? "bg-green-900/50 text-green-400" : "bg-green-100 text-green-700"
+          }`}>
+            {config.format.toUpperCase()}
+          </span>
+          <span className={`text-[11px] truncate ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
+            {config.fileName || block.content?.split("\n")[0]?.slice(0, 60) || "No data"}
+          </span>
+          {block.content && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 ml-auto" />}
         </div>
       )}
     </div>

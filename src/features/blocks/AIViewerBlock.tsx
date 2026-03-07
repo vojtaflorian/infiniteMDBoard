@@ -167,8 +167,8 @@ export function AIViewerBlock({ block, isEditing, isExpanded }: AIViewerBlockPro
   return (
     <div className="space-y-2">
       {/* Controls */}
-      <div className="flex items-center justify-between gap-2">
-        {showExpanded ? (
+      {showExpanded ? (
+        <div className="flex items-center justify-between gap-2">
           <SourceRefInput
             value={config.sourceRef ?? ""}
             onChange={(v) => updateBlock(block.id, { viewerConfig: { ...config, sourceRef: v } })}
@@ -176,36 +176,43 @@ export function AIViewerBlock({ block, isEditing, isExpanded }: AIViewerBlockPro
             currentBlockId={block.id}
             isDarkMode={isDarkMode}
           />
-        ) : (
-          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+          <div className="flex gap-1 shrink-0">
+            {RENDER_MODES.map((mode) => (
+              <button
+                key={mode}
+                onClick={(e) => { e.stopPropagation(); updateBlock(block.id, { viewerConfig: { ...config, renderMode: mode } }); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                  config.renderMode === mode
+                    ? isDarkMode ? "bg-purple-800 text-purple-200" : "bg-purple-200 text-purple-800"
+                    : isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 min-h-[24px]">
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
             isDarkMode ? "bg-purple-900/50 text-purple-400" : "bg-purple-100 text-purple-700"
           }`}>
+            {config.renderMode.toUpperCase()}
+          </span>
+          <span className={`text-[11px] font-mono truncate ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
             {config.sourceRef || "no source"}
           </span>
-        )}
-
-        <div className="flex gap-1 shrink-0">
-          {RENDER_MODES.map((mode) => (
-            <button
-              key={mode}
-              onClick={(e) => { e.stopPropagation(); updateBlock(block.id, { viewerConfig: { ...config, renderMode: mode } }); }}
-              onMouseDown={(e) => e.stopPropagation()}
-              className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
-                config.renderMode === mode
-                  ? isDarkMode ? "bg-purple-800 text-purple-200" : "bg-purple-200 text-purple-800"
-                  : isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
+          {sourceContent && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 ml-auto" />}
         </div>
-      </div>
+      )}
 
       {/* Content display */}
-      <div className="overflow-auto max-h-[500px]">
-        {renderContent()}
-      </div>
+      {showExpanded && (
+        <div className="overflow-auto max-h-[500px]">
+          {renderContent()}
+        </div>
+      )}
     </div>
   );
 }

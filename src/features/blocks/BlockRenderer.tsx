@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft, Loader2, MessageSquare, Send, X, ChevronUp, ChevronDown, Play } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -86,6 +86,22 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const [customPrompt, setCustomPrompt] = useState("");
   const didSpaceDrag = useRef(false);
   const aiMenuRef = useRef<HTMLDivElement>(null);
+  const portDragging = useRef(false);
+
+  const handlePortPointerDown = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    portDragging.current = true;
+    setConnectingFrom(block.id);
+    setTool("connect");
+
+    const onUp = (ev: PointerEvent) => {
+      portDragging.current = false;
+      document.removeEventListener("pointerup", onUp);
+      // Connection completes via existing connect-tool click on target block
+    };
+    document.addEventListener("pointerup", onUp);
+  }, [block.id, setConnectingFrom, setTool]);
 
   // Close AI menu on outside click
   useEffect(() => {
@@ -555,6 +571,27 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         <div className="mt-1 px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-500 text-[10px] whitespace-pre-wrap break-words max-h-[60px] overflow-auto">
           {block.executionError}
         </div>
+      )}
+
+      {/* Quick-connect ports on AI blocks */}
+      {!presentationMode && block.type.startsWith("ai-") && (
+        <>
+          {/* Input port — left edge */}
+          <div
+            className={`absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-10 ${
+              isDarkMode ? "bg-zinc-800 border-green-500" : "bg-white border-green-500"
+            }`}
+            title="Input"
+          />
+          {/* Output port — right edge */}
+          <div
+            onPointerDown={handlePortPointerDown}
+            className={`absolute top-1/2 -right-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-10 ${
+              isDarkMode ? "bg-zinc-800 border-blue-500" : "bg-white border-blue-500"
+            }`}
+            title="Drag to connect"
+          />
+        </>
       )}
 
       {/* Connection overlay when connect tool is active */}
