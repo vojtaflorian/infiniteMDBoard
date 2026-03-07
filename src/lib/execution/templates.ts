@@ -36,7 +36,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const provider = getDefaultProvider();
       const defaults = getDefaultAIConfig(provider);
       const input = makeBlock("ai-input", 100, 200, { title: "Input Text", inputConfig: { format: "text" } });
-      const agent = makeBlock("ai-agent", 500, 200, {
+      const agent = makeBlock("ai-agent", 540, 200, {
         title: "Summarizer",
         aiConfig: {
           provider, ...defaults, temperature: 0.7, maxTokens: 2048,
@@ -45,7 +45,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const viewer = makeBlock("ai-viewer", 950, 200, {
+      const viewer = makeBlock("ai-viewer", 1040, 200, {
         title: "Summary",
         viewerConfig: { renderMode: "markdown", sourceRef: `{{${agent.title!.toLowerCase().replace(/\s+/g, "_")}}}` },
       });
@@ -63,7 +63,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const provider = getDefaultProvider();
       const defaults = getDefaultAIConfig(provider);
       const input = makeBlock("ai-input", 100, 200, { title: "Source Text", inputConfig: { format: "text" } });
-      const agent = makeBlock("ai-agent", 500, 200, {
+      const agent = makeBlock("ai-agent", 540, 200, {
         title: "Translator",
         aiConfig: {
           provider, ...defaults, temperature: 0.3, maxTokens: 4096,
@@ -72,7 +72,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const viewer = makeBlock("ai-viewer", 950, 200, {
+      const viewer = makeBlock("ai-viewer", 1040, 200, {
         title: "Translation",
         viewerConfig: { renderMode: "text", sourceRef: `{{${agent.title!.toLowerCase().replace(/\s+/g, "_")}}}` },
       });
@@ -90,8 +90,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const provider = getDefaultProvider();
       const defaults = getDefaultAIConfig(provider);
       const inputText = makeBlock("ai-input", 100, 100, { title: "Product Text", inputConfig: { format: "text" } });
-      const inputGuidelines = makeBlock("ai-input", 100, 350, { title: "Brand Guidelines", inputConfig: { format: "text" }, content: "Tone: professional, friendly. Language: Czech. Avoid jargon." });
-      const copywriter = makeBlock("ai-agent", 550, 100, {
+      const inputGuidelines = makeBlock("ai-input", 100, 550, { title: "Brand Guidelines", inputConfig: { format: "text" }, content: "Tone: professional, friendly. Language: Czech. Avoid jargon." });
+      const copywriter = makeBlock("ai-agent", 540, 100, {
         title: "Copywriter",
         aiConfig: {
           provider, ...defaults, temperature: 0.7, maxTokens: 4096,
@@ -100,7 +100,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const qa = makeBlock("ai-agent", 550, 350, {
+      const qa = makeBlock("ai-agent", 540, 550, {
         title: "QA Reviewer",
         aiConfig: {
           provider, ...defaults, temperature: 0.3, maxTokens: 4096,
@@ -109,7 +109,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const htmlFormatter = makeBlock("ai-agent", 1000, 100, {
+      const htmlFormatter = makeBlock("ai-agent", 1040, 100, {
         title: "HTML Formatter",
         aiConfig: {
           provider, ...defaults, temperature: 0.1, maxTokens: 4096,
@@ -118,11 +118,11 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const viewerQA = makeBlock("ai-viewer", 1000, 350, {
+      const viewerQA = makeBlock("ai-viewer", 1040, 550, {
         title: "QA Report",
         viewerConfig: { renderMode: "markdown", sourceRef: "{{qa_reviewer}}" },
       });
-      const viewerHTML = makeBlock("ai-viewer", 1450, 100, {
+      const viewerHTML = makeBlock("ai-viewer", 1540, 100, {
         title: "HTML Output",
         viewerConfig: { renderMode: "html", sourceRef: "{{html_formatter}}" },
       });
@@ -148,7 +148,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const provider = getDefaultProvider();
       const defaults = getDefaultAIConfig(provider);
       const input = makeBlock("ai-input", 100, 200, { title: "Data", inputConfig: { format: "text" } });
-      const agentA = makeBlock("ai-agent", 450, 200, {
+      const agentA = makeBlock("ai-agent", 540, 200, {
         title: "Analyzer",
         aiConfig: {
           provider, ...defaults, temperature: 0.7, maxTokens: 4096,
@@ -157,7 +157,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const agentB = makeBlock("ai-agent", 850, 200, {
+      const agentB = makeBlock("ai-agent", 1040, 200, {
         title: "Reporter",
         aiConfig: {
           provider, ...defaults, temperature: 0.7, maxTokens: 4096,
@@ -166,7 +166,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const viewer = makeBlock("ai-viewer", 1250, 200, {
+      const viewer = makeBlock("ai-viewer", 1540, 200, {
         title: "Report",
         viewerConfig: { renderMode: "markdown", sourceRef: `{{${agentB.title!.toLowerCase().replace(/\s+/g, "_")}}}` },
       });
@@ -188,8 +188,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const provider = getDefaultProvider();
       const defaults = getDefaultAIConfig(provider);
       const inputProduct = makeBlock("ai-input", 100, 100, { title: "Product Info", inputConfig: { format: "text" } });
-      const inputAudience = makeBlock("ai-input", 100, 350, { title: "Target Audience", inputConfig: { format: "text" }, content: "Target: women 25-40, tone: casual & inspiring" });
-      const adCopy = makeBlock("ai-agent", 550, 50, {
+      const inputAudience = makeBlock("ai-input", 100, 550, { title: "Target Audience", inputConfig: { format: "text" }, content: "Target: women 25-40, tone: casual & inspiring" });
+      const adCopy = makeBlock("ai-agent", 540, 50, {
         title: "Ad Copy",
         aiConfig: {
           provider, ...defaults, temperature: 0.9, maxTokens: 4096,
@@ -198,7 +198,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const socialPosts = makeBlock("ai-agent", 550, 350, {
+      const socialPosts = makeBlock("ai-agent", 540, 550, {
         title: "Social Posts",
         aiConfig: {
           provider, ...defaults, temperature: 0.8, maxTokens: 4096,
@@ -207,11 +207,11 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const viewerAds = makeBlock("ai-viewer", 1000, 50, {
+      const viewerAds = makeBlock("ai-viewer", 1040, 50, {
         title: "Ad Variants",
         viewerConfig: { renderMode: "markdown", sourceRef: "{{ad_copy}}" },
       });
-      const viewerSocial = makeBlock("ai-viewer", 1000, 350, {
+      const viewerSocial = makeBlock("ai-viewer", 1040, 550, {
         title: "Social Output",
         viewerConfig: { renderMode: "markdown", sourceRef: "{{social_posts}}" },
       });
@@ -236,8 +236,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const provider = getDefaultProvider();
       const defaults = getDefaultAIConfig(provider);
       const inputCampaign = makeBlock("ai-input", 100, 100, { title: "Campaign Brief", inputConfig: { format: "text" }, content: "Campaign type: product launch\nProduct: ...\nGoal: drive pre-orders" });
-      const inputGuidelines = makeBlock("ai-input", 100, 350, { title: "Brand Guidelines", inputConfig: { format: "text" }, content: "Tone: professional, friendly. Max 3 paragraphs. Include one clear CTA." });
-      const writer = makeBlock("ai-agent", 550, 100, {
+      const inputGuidelines = makeBlock("ai-input", 100, 550, { title: "Brand Guidelines", inputConfig: { format: "text" }, content: "Tone: professional, friendly. Max 3 paragraphs. Include one clear CTA." });
+      const writer = makeBlock("ai-agent", 540, 100, {
         title: "Email Writer",
         aiConfig: {
           provider, ...defaults, temperature: 0.7, maxTokens: 4096,
@@ -246,7 +246,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const critic = makeBlock("ai-agent", 550, 350, {
+      const critic = makeBlock("ai-agent", 540, 550, {
         title: "Email Critic",
         aiConfig: {
           provider, ...defaults, temperature: 0.3, maxTokens: 4096,
@@ -255,7 +255,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const viewer = makeBlock("ai-viewer", 1000, 200, {
+      const viewer = makeBlock("ai-viewer", 1040, 200, {
         title: "Final Email",
         viewerConfig: { renderMode: "markdown", sourceRef: "{{email_critic}}" },
       });
@@ -279,8 +279,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const provider = getDefaultProvider();
       const defaults = getDefaultAIConfig(provider);
       const inputCompetitor = makeBlock("ai-input", 100, 100, { title: "Competitor Data", inputConfig: { format: "text" }, content: "Paste competitor product page, pricing, features, or any available info here." });
-      const inputOurs = makeBlock("ai-input", 100, 350, { title: "Our Product", inputConfig: { format: "text" }, content: "Our product: ...\nPrice: ...\nUSP: ...\nTarget market: ..." });
-      const researcher = makeBlock("ai-agent", 550, 100, {
+      const inputOurs = makeBlock("ai-input", 100, 550, { title: "Our Product", inputConfig: { format: "text" }, content: "Our product: ...\nPrice: ...\nUSP: ...\nTarget market: ..." });
+      const researcher = makeBlock("ai-agent", 540, 100, {
         title: "Researcher",
         aiConfig: {
           provider, ...defaults, temperature: 0.4, maxTokens: 4096,
@@ -289,7 +289,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const strategist = makeBlock("ai-agent", 550, 350, {
+      const strategist = makeBlock("ai-agent", 540, 550, {
         title: "Strategist",
         aiConfig: {
           provider, ...defaults, temperature: 0.5, maxTokens: 4096,
@@ -298,7 +298,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
           responseFormat: "text",
         },
       });
-      const viewer = makeBlock("ai-viewer", 1000, 200, {
+      const viewer = makeBlock("ai-viewer", 1040, 200, {
         title: "Strategy Report",
         viewerConfig: { renderMode: "markdown", sourceRef: "{{strategist}}" },
       });

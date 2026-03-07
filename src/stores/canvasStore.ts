@@ -368,14 +368,19 @@ export const useCanvasStore = create<CanvasState>()(
 
       insertWorkflow: (name, newBlocks, newConnections) => set((state) => {
         const cam = state.camera;
-        let centerX = -cam.x + (typeof window !== "undefined" ? window.innerWidth / 2 : 500) / cam.zoom;
-        const centerY = -cam.y + (typeof window !== "undefined" ? window.innerHeight / 2 : 400) / cam.zoom;
+        const vw = typeof window !== "undefined" ? window.innerWidth : 1000;
+        const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+        let centerX = -cam.x + vw / 2 / cam.zoom;
+        const centerY = -cam.y + vh / 2 / cam.zoom;
+
+        // Estimate block height: expanded AI blocks are tall
+        const estimateH = (b: Block) => b.height > 0 ? b.height : b.type === "ai-agent" ? 450 : 250;
 
         // Find bounding box of template blocks
         const minX = Math.min(...newBlocks.map(b => b.position.x));
         const minY = Math.min(...newBlocks.map(b => b.position.y));
         const maxX = Math.max(...newBlocks.map(b => b.position.x + b.width));
-        const maxY = Math.max(...newBlocks.map(b => b.position.y + (b.height > 0 ? b.height : 200)));
+        const maxY = Math.max(...newBlocks.map(b => b.position.y + estimateH(b)));
         const bboxW = maxX - minX;
         const bboxH = maxY - minY;
 
@@ -388,7 +393,7 @@ export const useCanvasStore = create<CanvasState>()(
           const areaBottom = centerY + bboxH / 2 + padding;
           const overlap = state.blocks.some(b => {
             const bRight = b.position.x + b.width;
-            const bBottom = b.position.y + (b.height > 0 ? b.height : 200);
+            const bBottom = b.position.y + estimateH(b);
             return b.position.x < areaRight && bRight > areaLeft && b.position.y < areaBottom && bBottom > areaTop;
           });
           if (!overlap) break;
@@ -419,10 +424,15 @@ export const useCanvasStore = create<CanvasState>()(
           zIndex: maxZ + 1,
         }));
 
+        // Pan camera to center on the new workflow
+        const newCamX = -(centerX - vw / 2 / cam.zoom);
+        const newCamY = -(centerY - vh / 2 / cam.zoom);
+
         return {
           blocks: [...state.blocks, frameBlock, ...offsetBlocks],
           connections: [...state.connections, ...newConnections],
           expandedBlockIds: [...state.expandedBlockIds, ...offsetBlocks.filter(b => b.type.startsWith("ai-")).map(b => b.id)],
+          camera: { ...cam, x: newCamX, y: newCamY },
         };
       }),
 
