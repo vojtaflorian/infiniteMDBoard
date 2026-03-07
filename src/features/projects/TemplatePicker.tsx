@@ -23,7 +23,7 @@ export function TemplatePicker({ open, onClose, onSelect, onInsert }: TemplatePi
 
       {/* Modal */}
       <div
-        className={`relative z-10 w-full max-w-lg rounded-xl p-6 shadow-2xl ${
+        className={`relative z-10 w-full max-w-2xl rounded-xl p-6 shadow-2xl ${
           isDarkMode ? "bg-zinc-900 border border-zinc-800" : "bg-white border border-slate-200"
         }`}
       >
@@ -43,7 +43,7 @@ export function TemplatePicker({ open, onClose, onSelect, onInsert }: TemplatePi
         <p className={`text-sm mb-4 ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
           Pick a starter template. You can customize everything after creation.
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {WORKFLOW_TEMPLATES.map((t) => (
             <button
               key={t.name}
