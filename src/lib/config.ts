@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.5.0";
+export const APP_VERSION = "3.6.0";
 export const APP_NAME = "infiniteMDBoard";
 export const APP_ID = "infiniteMDBoard";
 

@@ -25,3 +25,10 @@ export function getDefaultAIConfig(provider: AIProvider): { apiKeyId: string; mo
 
   return { apiKeyId, model };
 }
+
+/** Return the provider of the first stored API key, or "openai". */
+export function getDefaultProvider(): AIProvider {
+  const keys = typeof window !== "undefined" ? getApiKeys() : [];
+  if (keys.length > 0) return keys[0].provider;
+  return "openai";
+}

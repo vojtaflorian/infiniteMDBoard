@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import type { Project } from "@/types";
 import { generateId } from "@/lib/id";
 import { createLogger } from "@/lib/logger";
+import { deleteCloudProject } from "@/lib/supabase/projects";
 
 const log = createLogger("projectStore");
 
@@ -77,6 +78,8 @@ export const useProjectStore = create<ProjectState>()(
           activeProjectId:
             s.activeProjectId === id ? null : s.activeProjectId,
         }));
+        // Also delete from cloud (fire-and-forget)
+        deleteCloudProject(id).catch(() => {});
       },
 
       renameProject: (id, name) => {

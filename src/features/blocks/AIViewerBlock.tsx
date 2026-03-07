@@ -104,6 +104,27 @@ export function AIViewerBlock({ block, isEditing, isExpanded }: AIViewerBlockPro
     return sourceBlock.executionOutput ?? "";
   }, [config.sourceRef, blocks]);
 
+  // Auto-rename title based on alias or sourceRef
+  useEffect(() => {
+    if (block.alias && block.alias !== block.title) {
+      updateBlock(block.id, { title: block.alias });
+    } else if (config.sourceRef && !block.alias) {
+      const refName = config.sourceRef.replace(/^\{\{|\}\}$/g, "");
+      const newTitle = `Viewer: ${refName}`;
+      if (newTitle !== block.title) updateBlock(block.id, { title: newTitle });
+    }
+  }, [block.alias, config.sourceRef]);
+
+  // Auto-expand when source data arrives
+  useEffect(() => {
+    if (sourceContent && block.height > 0) {
+      // Fit height to content (rough estimate: 16px per line, min 150)
+      const lines = sourceContent.split("\n").length;
+      const estimatedHeight = Math.max(150, Math.min(600, lines * 16 + 80));
+      updateBlock(block.id, { height: estimatedHeight });
+    }
+  }, [sourceContent ? "has-data" : "no-data"]);
+
   const renderContent = () => {
     if (!sourceContent) {
       return (
@@ -200,7 +221,7 @@ export function AIViewerBlock({ block, isEditing, isExpanded }: AIViewerBlockPro
           }`}>
             {config.renderMode.toUpperCase()}
           </span>
-          <span className={`text-[11px] font-mono truncate ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
+          <span className={`text-[11px] font-mono ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
             {config.sourceRef || "no source"}
           </span>
           {sourceContent && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 ml-auto" />}

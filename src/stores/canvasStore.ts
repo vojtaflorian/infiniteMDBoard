@@ -12,6 +12,7 @@ import type {
 } from "@/types";
 import { generateId } from "@/lib/id";
 import { createLogger } from "@/lib/logger";
+import { getDefaultAIConfig, getDefaultProvider } from "@/lib/execution/aiDefaults";
 
 const log = createLogger("canvasStore");
 
@@ -87,38 +88,42 @@ export const useCanvasStore = create<CanvasState>()(
 
       addBlock: (type, position, initial) => {
         const defaults: Record<BlockType, Partial<Block>> = {
-          text:   { title: "Text",   content: "", width: 250 },
-          image:  { title: "Image",  content: "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnJrZHZybmUzM2s2aWozd2Mya2txY21wajNrODF6em04bGtsa2U3dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cXSWlQ0j4Vta8/giphy.gif", width: 250 },
-          link:   { title: "Link",   content: "", width: 280 },
-          sticky: { title: "Note",   content: "", width: 180, color: "yellow" },
-          frame:  { title: "Frame",  content: "", width: 600, height: 400 },
-          "ai-agent": {
-            title: "AI Agent",
-            content: "",
-            width: 350,
-            height: 0,
-            aiConfig: {
-              provider: "openai",
-              model: "",
-              apiKeyId: "",
-              systemPrompt: "",
-              userPrompt: "",
-              temperature: 1,
-              maxTokens: 4096,
-              responseFormat: "text",
-            },
-          },
+          text:   { title: "Text",   content: "", width: 300 },
+          image:  { title: "Image",  content: "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnJrZHZybmUzM2s2aWozd2Mya2txY21wajNrODF6em04bGtsa2U3dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/cXSWlQ0j4Vta8/giphy.gif", width: 300 },
+          link:   { title: "Link",   content: "", width: 340 },
+          sticky: { title: "Note",   content: "", width: 220, color: "yellow" },
+          frame:  { title: "Frame",  content: "", width: 720, height: 400 },
+          "ai-agent": (() => {
+            const provider = typeof window !== "undefined" ? getDefaultProvider() : "openai" as const;
+            const defaults = typeof window !== "undefined" ? getDefaultAIConfig(provider) : { apiKeyId: "", model: "" };
+            return {
+              title: "AI Agent",
+              content: "",
+              width: 420,
+              height: 0,
+              aiConfig: {
+                provider,
+                model: defaults.model,
+                apiKeyId: defaults.apiKeyId,
+                systemPrompt: "",
+                userPrompt: "",
+                temperature: 1,
+                maxTokens: 4096,
+                responseFormat: "text",
+              },
+            };
+          })(),
           "ai-input": {
             title: "Input",
             content: "",
-            width: 300,
+            width: 360,
             height: 0,
             inputConfig: { format: "text" },
           },
           "ai-viewer": {
             title: "Viewer",
             content: "",
-            width: 400,
+            width: 480,
             height: 300,
             viewerConfig: { renderMode: "text" },
           },
@@ -188,6 +193,15 @@ export const useCanvasStore = create<CanvasState>()(
           position: { x: block.position.x + 30, y: block.position.y + 30 },
           zIndex: get().blocks.length + 1,
         };
+        // Generate unique title for AI blocks
+        if (newBlock.type.startsWith("ai-")) {
+          const baseName = block.title.replace(/\s*\d+$/, "");
+          const existing = get().blocks.filter(b => b.type === block.type);
+          const n = existing.length + 1;
+          newBlock.title = `${baseName} ${n}`;
+          // Clear alias to avoid duplicates
+          newBlock.alias = undefined;
+        }
         log.info("Duplicated block", id, "->", newBlock.id);
         set((s) => ({
           blocks: [...s.blocks, newBlock],
@@ -282,12 +296,20 @@ export const useCanvasStore = create<CanvasState>()(
         for (const id of ids) {
           const block = get().blocks.find((b) => b.id === id);
           if (!block) continue;
-          newBlocks.push({
+          const newBlock: Block = {
             ...block,
             id: generateId(),
             position: { x: block.position.x + 30, y: block.position.y + 30 },
             zIndex: blockCount + newBlocks.length + 1,
-          });
+          };
+          if (newBlock.type.startsWith("ai-")) {
+            const baseName = block.title.replace(/\s*\d+$/, "");
+            const allBlocks = [...get().blocks, ...newBlocks];
+            const existing = allBlocks.filter(b => b.type === block.type);
+            newBlock.title = `${baseName} ${existing.length + 1}`;
+            newBlock.alias = undefined;
+          }
+          newBlocks.push(newBlock);
         }
         log.info("Duplicated blocks", ids.length);
         set((s) => ({
@@ -345,9 +367,8 @@ export const useCanvasStore = create<CanvasState>()(
       },
 
       insertWorkflow: (name, newBlocks, newConnections) => set((state) => {
-        // Offset blocks to viewport center
         const cam = state.camera;
-        const centerX = -cam.x + (typeof window !== "undefined" ? window.innerWidth / 2 : 500) / cam.zoom;
+        let centerX = -cam.x + (typeof window !== "undefined" ? window.innerWidth / 2 : 500) / cam.zoom;
         const centerY = -cam.y + (typeof window !== "undefined" ? window.innerHeight / 2 : 400) / cam.zoom;
 
         // Find bounding box of template blocks
@@ -358,11 +379,25 @@ export const useCanvasStore = create<CanvasState>()(
         const bboxW = maxX - minX;
         const bboxH = maxY - minY;
 
-        // Offset to center viewport
+        // Shift right until no overlap with existing blocks
+        const padding = 60;
+        for (let attempt = 0; attempt < 20; attempt++) {
+          const areaLeft = centerX - bboxW / 2 - padding;
+          const areaRight = centerX + bboxW / 2 + padding;
+          const areaTop = centerY - bboxH / 2 - padding;
+          const areaBottom = centerY + bboxH / 2 + padding;
+          const overlap = state.blocks.some(b => {
+            const bRight = b.position.x + b.width;
+            const bBottom = b.position.y + (b.height > 0 ? b.height : 200);
+            return b.position.x < areaRight && bRight > areaLeft && b.position.y < areaBottom && bBottom > areaTop;
+          });
+          if (!overlap) break;
+          centerX += bboxW + padding * 2;
+        }
+
         const offsetX = centerX - bboxW / 2 - minX;
         const offsetY = centerY - bboxH / 2 - minY;
 
-        const padding = 60;
         const maxZ = Math.max(0, ...state.blocks.map(b => b.zIndex));
 
         // Create frame
