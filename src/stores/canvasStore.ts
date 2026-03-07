@@ -116,15 +116,17 @@ export const useCanvasStore = create<CanvasState>()(
           },
         };
         const d = defaults[type];
+        const { width: _w, title: _t, content: _c, color: _co, ...extraDefaults } = d;
         const block: Block = {
           id: generateId(),
           type,
           position,
           width: d.width ?? 250,
-          height: 0,
+          height: d.height ?? 0,
           title: d.title ?? "",
           content: d.content ?? "",
           color: d.color,
+          ...extraDefaults,
           zIndex: get().blocks.length + 1,
           ...initial,
         };

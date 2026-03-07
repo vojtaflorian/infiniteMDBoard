@@ -159,6 +159,42 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Validate custom endpoints to prevent SSRF
+  if (body.endpoint) {
+    try {
+      const url = new URL(body.endpoint);
+      if (!["https:", "http:"].includes(url.protocol)) {
+        return new Response(
+          JSON.stringify({ error: "Endpoint must use http or https" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      // Block private/internal IPs
+      const host = url.hostname.toLowerCase();
+      if (
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host === "0.0.0.0" ||
+        host.startsWith("10.") ||
+        host.startsWith("192.168.") ||
+        host.startsWith("172.") ||
+        host === "[::1]" ||
+        host.endsWith(".internal") ||
+        host.endsWith(".local")
+      ) {
+        return new Response(
+          JSON.stringify({ error: "Endpoint cannot target private/internal addresses" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid endpoint URL" }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  }
+
   try {
     // Image generation — separate path, no streaming
     if (body.responseFormat === "image") {

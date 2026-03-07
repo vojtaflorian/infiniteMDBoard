@@ -198,7 +198,7 @@ export async function runPipeline(
         if (signal?.aborted) break;
 
         if (loop.loopConfig.condition) {
-          const targetBlock = useCanvasStore.getState().blocks.find((b) => b.id === blockId);
+          const targetBlock = useCanvasStore.getState().blocks.find((b) => b.id === targetId);
           if (targetBlock?.executionOutput) {
             try {
               const output = JSON.parse(targetBlock.executionOutput);

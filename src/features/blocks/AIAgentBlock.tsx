@@ -35,6 +35,7 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
   const [openSections, setOpenSections] = useState<Set<Section>>(new Set(["prompts"]));
   const [streamingText, setStreamingText] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const schemaTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const apiKeys = typeof window !== "undefined" ? getApiKeys() : [];
   const providerKeys = apiKeys.filter((k) => k.provider === config.provider);
@@ -282,13 +283,13 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
                 placeholder='Paste example JSON to generate schema...'
                 className={`${inputClass} min-h-[40px] resize-y font-mono`}
                 rows={3}
-                id={`schema-example-${block.id}`}
+                ref={schemaTextareaRef}
               />
               <div className="flex gap-1">
                 <button
                   onClick={async () => {
-                    const ta = document.getElementById(`schema-example-${block.id}`) as HTMLTextAreaElement;
-                    if (!ta?.value.trim()) return;
+                    if (!schemaTextareaRef.current?.value.trim()) return;
+                    const ta = schemaTextareaRef.current;
                     const key = getApiKeys().find((k) => k.id === config.apiKeyId);
                     const res = await fetch("/api/ai/schema", {
                       method: "POST",
@@ -313,8 +314,8 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
                 </button>
                 <button
                   onClick={async () => {
-                    const ta = document.getElementById(`schema-example-${block.id}`) as HTMLTextAreaElement;
-                    if (!ta?.value.trim()) return;
+                    if (!schemaTextareaRef.current?.value.trim()) return;
+                    const ta = schemaTextareaRef.current;
                     const res = await fetch("/api/ai/schema", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
