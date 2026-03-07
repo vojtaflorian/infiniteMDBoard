@@ -36,10 +36,14 @@ export function Canvas() {
   const draggingBlockId = useCanvasStore((s) => s.draggingBlockId);
   const resizingBlockId = useCanvasStore((s) => s.resizingBlockId);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
+  const toggleSelectBlock = useCanvasStore((s) => s.toggleSelectBlock);
   const setEditingBlock = useCanvasStore((s) => s.setEditingBlock);
   const setDraggingBlock = useCanvasStore((s) => s.setDraggingBlock);
   const setResizingBlock = useCanvasStore((s) => s.setResizingBlock);
   const setConnectingFrom = useCanvasStore((s) => s.setConnectingFrom);
+  const pendingConnection = useCanvasStore((s) => s.pendingConnection);
+  const updatePendingConnectionTarget = useCanvasStore((s) => s.updatePendingConnectionTarget);
+  const setPendingConnection = useCanvasStore((s) => s.setPendingConnection);
   const moveBlock = useCanvasStore((s) => s.moveBlock);
   const resizeBlock = useCanvasStore((s) => s.resizeBlock);
   const { isDarkMode } = useUIStore();
@@ -48,6 +52,8 @@ export function Canvas() {
 
   const searchOpen = useUIStore((s) => s.searchOpen);
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
+
+  const [marqueeRect, setMarqueeRect] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
 
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const blockStartPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -120,7 +126,9 @@ export function Canvas() {
       if (e.repeat) return;
       if (e.key === "Escape") {
         const state = useCanvasStore.getState();
-        if (state.activeTool !== "select") {
+        if (state.pendingConnection) {
+          state.setPendingConnection(null);
+        } else if (state.activeTool !== "select") {
           state.setTool("select");
         } else if (state.connectingFromId) {
           state.setConnectingFrom(null);
@@ -194,6 +202,15 @@ export function Canvas() {
         return;
       }
 
+      if (activeTool === "select" && e.shiftKey) {
+        // Start marquee select
+        const cam = useCanvasStore.getState().camera;
+        const worldX = e.clientX / cam.zoom - cam.x;
+        const worldY = e.clientY / cam.zoom - cam.y;
+        setMarqueeRect({ startX: worldX, startY: worldY, endX: worldX, endY: worldY });
+        return; // Don't pan
+      }
+
       if (activeTool === "select") {
         clearSelection();
         setEditingBlock(null);
@@ -207,6 +224,23 @@ export function Canvas() {
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
+      if (pendingConnection) {
+        const zoom = useCanvasStore.getState().camera.zoom;
+        const cam = useCanvasStore.getState().camera;
+        const worldX = (e.clientX) / zoom - cam.x;
+        const worldY = (e.clientY) / zoom - cam.y;
+        updatePendingConnectionTarget(worldX, worldY);
+        return; // Don't do other move handling while connecting
+      }
+
+      if (marqueeRect) {
+        const cam = useCanvasStore.getState().camera;
+        const worldX = e.clientX / cam.zoom - cam.x;
+        const worldY = e.clientY / cam.zoom - cam.y;
+        setMarqueeRect((prev) => prev ? { ...prev, endX: worldX, endY: worldY } : null);
+        return;
+      }
+
       if (isPanning) {
         updatePanning(e.clientX, e.clientY);
         return;
@@ -289,10 +323,45 @@ export function Canvas() {
         }
       }
     },
-    [isPanning, draggingBlockId, resizingBlockId, updatePanning, moveBlock, resizeBlock],
+    [isPanning, pendingConnection, draggingBlockId, resizingBlockId, marqueeRect, updatePanning, updatePendingConnectionTarget, moveBlock, resizeBlock],
   );
 
   const handleMouseUp = useCallback(() => {
+    // Complete marquee selection
+    if (marqueeRect) {
+      const x1 = Math.min(marqueeRect.startX, marqueeRect.endX);
+      const y1 = Math.min(marqueeRect.startY, marqueeRect.endY);
+      const x2 = Math.max(marqueeRect.startX, marqueeRect.endX);
+      const y2 = Math.max(marqueeRect.startY, marqueeRect.endY);
+
+      const { blocks: allBlocks } = useCanvasStore.getState();
+      const selectedIds: string[] = [];
+      for (const block of allBlocks) {
+        const bx1 = block.position.x;
+        const by1 = block.position.y;
+        const bx2 = block.position.x + block.width;
+        const by2 = block.position.y + (block.height > 0 ? block.height : 100);
+        if (bx1 < x2 && bx2 > x1 && by1 < y2 && by2 > y1) {
+          selectedIds.push(block.id);
+        }
+      }
+
+      if (selectedIds.length > 0) {
+        clearSelection();
+        for (const id of selectedIds) {
+          toggleSelectBlock(id);
+        }
+      }
+
+      setMarqueeRect(null);
+      return;
+    }
+
+    // Cancel pending connection if dropped on empty canvas
+    if (useCanvasStore.getState().pendingConnection) {
+      setPendingConnection(null);
+    }
+
     // Finalize drag/resize: resume tracking + push single undo entry
     if (preMoveStateRef.current) {
       const temporal = useCanvasStore.temporal;
@@ -314,7 +383,7 @@ export function Canvas() {
     resizeStartRef.current = null;
     blockStartSizeRef.current = null;
     childStartPositionsRef.current = null;
-  }, [stopPanning, setDraggingBlock, setResizingBlock]);
+  }, [stopPanning, setDraggingBlock, setResizingBlock, setPendingConnection, marqueeRect, clearSelection, toggleSelectBlock]);
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -342,11 +411,13 @@ export function Canvas() {
   );
 
   const cursorStyle =
-    isPanning
-      ? "cursor-grab"
-      : activeTool === "connect"
-        ? "cursor-crosshair"
-        : "cursor-default";
+    marqueeRect
+      ? "cursor-crosshair"
+      : isPanning
+        ? "cursor-grab"
+        : activeTool === "connect"
+          ? "cursor-crosshair"
+          : "cursor-default";
 
   return (
     <div
@@ -386,6 +457,17 @@ export function Canvas() {
         {blocks.map((block) => (
           <BlockRenderer key={block.id} block={block} />
         ))}
+        {marqueeRect && (
+          <div
+            className="absolute border-2 border-blue-500/50 bg-blue-500/10 pointer-events-none z-[100]"
+            style={{
+              left: Math.min(marqueeRect.startX, marqueeRect.endX),
+              top: Math.min(marqueeRect.startY, marqueeRect.endY),
+              width: Math.abs(marqueeRect.endX - marqueeRect.startX),
+              height: Math.abs(marqueeRect.endY - marqueeRect.startY),
+            }}
+          />
+        )}
       </div>
 
       {/* UI overlays */}

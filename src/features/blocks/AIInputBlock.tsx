@@ -223,6 +223,16 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
           {block.content && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 ml-auto" />}
         </div>
       )}
+
+      {/* URL info badge */}
+      {config.format !== "file" && /^https?:\/\/\S+$/i.test(block.content.trim()) && (
+        <div className={`flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-md ${
+          isDarkMode ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"
+        }`}>
+          <span>🔗</span>
+          <span>URL — model will fetch content if supported</span>
+        </div>
+      )}
     </div>
   );
 }

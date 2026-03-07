@@ -7,12 +7,14 @@ interface UIState {
   searchQuery: string;
   presentationMode: boolean;
   apiKeySettingsOpen: boolean;
+  profileTab: "profile" | "apikeys";
   toggleTheme: () => void;
   setDarkMode: (dark: boolean) => void;
   setSearchOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
   setPresentationMode: (on: boolean) => void;
   setApiKeySettingsOpen: (open: boolean) => void;
+  setProfileTab: (tab: "profile" | "apikeys") => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -23,12 +25,14 @@ export const useUIStore = create<UIState>()(
       searchQuery: "",
       presentationMode: false,
       apiKeySettingsOpen: false,
+      profileTab: "profile" as const,
       toggleTheme: () => set((s) => ({ isDarkMode: !s.isDarkMode })),
       setDarkMode: (dark) => set({ isDarkMode: dark }),
       setSearchOpen: (open) => set({ searchOpen: open, ...(!open && { searchQuery: "" }) }),
       setSearchQuery: (query) => set({ searchQuery: query }),
       setPresentationMode: (on) => set({ presentationMode: on }),
-      setApiKeySettingsOpen: (open) => set({ apiKeySettingsOpen: open }),
+      setApiKeySettingsOpen: (open) => set({ apiKeySettingsOpen: open, ...(open && { profileTab: "apikeys" as const }) }),
+      setProfileTab: (tab) => set({ profileTab: tab }),
     }),
     {
       name: "infiniteMDBoard_ui",

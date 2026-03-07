@@ -29,6 +29,7 @@ interface CanvasState {
   draggingBlockId: string | null;
   resizingBlockId: string | null;
   connectingFromId: string | null;
+  pendingConnection: { fromId: string; fromX: number; fromY: number; toX: number; toY: number } | null;
   isPanning: boolean;
   expandedBlockIds: string[];
 
@@ -52,10 +53,13 @@ interface CanvasState {
   setDraggingBlock: (id: string | null) => void;
   setResizingBlock: (id: string | null) => void;
   setConnectingFrom: (id: string | null) => void;
+  setPendingConnection: (data: { fromId: string; fromX: number; fromY: number; toX: number; toY: number } | null) => void;
+  updatePendingConnectionTarget: (toX: number, toY: number) => void;
   setIsPanning: (panning: boolean) => void;
   toggleBlockExpanded: (id: string) => void;
   setBlockExecution: (id: string, state: ExecutionState, output?: string, error?: string, tokens?: { input: number; output: number }) => void;
   clearBlockExecution: (id: string) => void;
+  insertWorkflow: (name: string, blocks: Block[], connections: Connection[]) => void;
   loadProject: (project: Project) => void;
   toProjectData: () => Pick<Project, "blocks" | "connections" | "camera">;
   reset: () => void;
@@ -71,6 +75,7 @@ const initialState = {
   draggingBlockId: null as string | null,
   resizingBlockId: null as string | null,
   connectingFromId: null as string | null,
+  pendingConnection: null as { fromId: string; fromX: number; fromY: number; toX: number; toY: number } | null,
   isPanning: false,
   expandedBlockIds: [] as string[],
 };
@@ -295,6 +300,8 @@ export const useCanvasStore = create<CanvasState>()(
       setDraggingBlock: (id) => set({ draggingBlockId: id }),
       setResizingBlock: (id) => set({ resizingBlockId: id }),
       setConnectingFrom: (id) => set({ connectingFromId: id }),
+      setPendingConnection: (data) => set({ pendingConnection: data }),
+      updatePendingConnectionTarget: (toX, toY) => set((s) => s.pendingConnection ? { pendingConnection: { ...s.pendingConnection, toX, toY } } : {}),
       setIsPanning: (panning) => set({ isPanning: panning }),
 
       toggleBlockExpanded: (id) => set((s) => ({
@@ -337,6 +344,53 @@ export const useCanvasStore = create<CanvasState>()(
         }));
       },
 
+      insertWorkflow: (name, newBlocks, newConnections) => set((state) => {
+        // Offset blocks to viewport center
+        const cam = state.camera;
+        const centerX = -cam.x + (typeof window !== "undefined" ? window.innerWidth / 2 : 500) / cam.zoom;
+        const centerY = -cam.y + (typeof window !== "undefined" ? window.innerHeight / 2 : 400) / cam.zoom;
+
+        // Find bounding box of template blocks
+        const minX = Math.min(...newBlocks.map(b => b.position.x));
+        const minY = Math.min(...newBlocks.map(b => b.position.y));
+        const maxX = Math.max(...newBlocks.map(b => b.position.x + b.width));
+        const maxY = Math.max(...newBlocks.map(b => b.position.y + (b.height > 0 ? b.height : 200)));
+        const bboxW = maxX - minX;
+        const bboxH = maxY - minY;
+
+        // Offset to center viewport
+        const offsetX = centerX - bboxW / 2 - minX;
+        const offsetY = centerY - bboxH / 2 - minY;
+
+        const padding = 60;
+        const maxZ = Math.max(0, ...state.blocks.map(b => b.zIndex));
+
+        // Create frame
+        const frameBlock: Block = {
+          id: generateId(),
+          type: "frame",
+          position: { x: centerX - bboxW / 2 - padding, y: centerY - bboxH / 2 - padding },
+          width: bboxW + padding * 2,
+          height: bboxH + padding * 2,
+          title: name,
+          content: "",
+          zIndex: 0,
+        };
+
+        // Offset blocks
+        const offsetBlocks = newBlocks.map(b => ({
+          ...b,
+          position: { x: b.position.x + offsetX, y: b.position.y + offsetY },
+          zIndex: maxZ + 1,
+        }));
+
+        return {
+          blocks: [...state.blocks, frameBlock, ...offsetBlocks],
+          connections: [...state.connections, ...newConnections],
+          expandedBlockIds: [...state.expandedBlockIds, ...offsetBlocks.filter(b => b.type.startsWith("ai-")).map(b => b.id)],
+        };
+      }),
+
       loadProject: (project) => {
         log.info("Loaded project", project.id);
         set({
@@ -349,6 +403,7 @@ export const useCanvasStore = create<CanvasState>()(
           draggingBlockId: null,
           resizingBlockId: null,
           connectingFromId: null,
+          pendingConnection: null,
           isPanning: false,
         });
       },

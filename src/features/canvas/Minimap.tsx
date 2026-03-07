@@ -15,6 +15,17 @@ const typeColors: Record<string, string> = {
   link: "#0ea5e9",
   sticky: "#eab308",
   frame: "#6b7280",
+  "ai-agent": "#3b82f6",
+  "ai-input": "#22c55e",
+  "ai-viewer": "#a855f7",
+};
+
+const blockColorMap: Record<string, string> = {
+  yellow: "#eab308",
+  pink: "#ec4899",
+  green: "#22c55e",
+  blue: "#3b82f6",
+  purple: "#a855f7",
 };
 
 export function Minimap() {
@@ -59,7 +70,8 @@ export function Minimap() {
       const y = (b.position.y - minY) * scale;
       const w = b.width * scale;
       const h = (getRenderedBlockHeight(b)) * scale;
-      ctx.fillStyle = typeColors[b.type] ?? "#6b7280";
+      const color = (b.color && blockColorMap[b.color]) || typeColors[b.type] || "#6b7280";
+      ctx.fillStyle = color;
       ctx.globalAlpha = b.type === "frame" ? 0.2 : 0.6;
       ctx.fillRect(x, y, Math.max(w, 2), Math.max(h, 2));
     }

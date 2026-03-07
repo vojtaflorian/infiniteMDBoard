@@ -13,6 +13,7 @@ const ARROW_COLOR_LIGHT = "#94a3b8";
 export function ConnectionLayer() {
   const blocks = useCanvasStore((s) => s.blocks);
   const connections = useCanvasStore((s) => s.connections);
+  const pendingConnection = useCanvasStore((s) => s.pendingConnection);
   const { isDarkMode } = useUIStore();
 
   const arrowColor = isDarkMode ? ARROW_COLOR_DARK : ARROW_COLOR_LIGHT;
@@ -24,6 +25,7 @@ export function ConnectionLayer() {
         const from = blockMap.get(conn.fromId);
         const to = blockMap.get(conn.toId);
         if (!from || !to) return null;
+        const isAi = from.type.startsWith("ai-") || to.type.startsWith("ai-");
         return {
           id: conn.id,
           path: getArrowPath(from, to),
@@ -33,9 +35,10 @@ export function ConnectionLayer() {
           loopConfig: conn.loopConfig,
           fromStatus: from.executionState,
           toStatus: to.executionState,
+          isAiConnection: isAi,
         };
       })
-      .filter(Boolean) as { id: string; path: string; midpoint: Position; label: string; connectionStyle?: ConnectionStyle; loopConfig?: LoopConfig; fromStatus?: string; toStatus?: string }[];
+      .filter(Boolean) as { id: string; path: string; midpoint: Position; label: string; connectionStyle?: ConnectionStyle; loopConfig?: LoopConfig; fromStatus?: string; toStatus?: string; isAiConnection?: boolean }[];
   }, [blocks, connections]);
 
   return (
@@ -83,6 +86,9 @@ export function ConnectionLayer() {
           <line x1="1" y1="1" x2="9" y2="9" stroke="#ef4444" strokeWidth="2" />
           <line x1="9" y1="1" x2="1" y2="9" stroke="#ef4444" strokeWidth="2" />
         </marker>
+        <marker id="arrowhead-ai" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa" />
+        </marker>
         <marker id="loop-marker" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
           <path d="M6 2a4 4 0 1 1-1 7.9" fill="none" stroke={arrowColor} strokeWidth="1.5" />
           <polygon points="3,8 6,10 5,7" fill={arrowColor} />
@@ -101,8 +107,20 @@ export function ConnectionLayer() {
           loopConfig={arrow.loopConfig}
           fromStatus={arrow.fromStatus}
           toStatus={arrow.toStatus}
+          isAiConnection={arrow.isAiConnection}
         />
       ))}
+      {pendingConnection && (
+        <path
+          d={`M ${pendingConnection.fromX} ${pendingConnection.fromY} L ${pendingConnection.toX} ${pendingConnection.toY}`}
+          stroke="#60a5fa"
+          strokeWidth={2}
+          strokeDasharray="6 4"
+          fill="none"
+          markerEnd="url(#arrowhead-ai)"
+          style={{ pointerEvents: "none" }}
+        />
+      )}
     </svg>
   );
 }
