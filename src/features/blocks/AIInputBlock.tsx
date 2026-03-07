@@ -10,6 +10,7 @@ import type { Block, InputConfig } from "@/types";
 interface AIInputBlockProps {
   block: Block;
   isEditing: boolean;
+  isExpanded?: boolean;
 }
 
 const TEXT_EXTENSIONS = [".txt", ".md", ".csv", ".json", ".xml", ".html", ".css", ".js", ".ts"];
@@ -21,7 +22,8 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function AIInputBlock({ block, isEditing }: AIInputBlockProps) {
+export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps) {
+  const showExpanded = isEditing || isExpanded;
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const { isDarkMode } = useUIStore();
   const config: InputConfig = block.inputConfig ?? { format: "text" };
@@ -151,7 +153,7 @@ export function AIInputBlock({ block, isEditing }: AIInputBlockProps) {
                 {config.fileType?.startsWith("image/") && " · image data URL"}
               </div>
             </div>
-            {isEditing && (
+            {showExpanded && (
               <button onClick={(e) => { e.stopPropagation(); clearFile(); }} onMouseDown={(e) => e.stopPropagation()}
                 className="p-1 rounded text-red-500 hover:text-red-400"><X size={12} /></button>
             )}
@@ -159,7 +161,7 @@ export function AIInputBlock({ block, isEditing }: AIInputBlockProps) {
               <img src={block.content} alt={config.fileName} className="w-12 h-12 object-cover rounded" />
             )}
           </div>
-        ) : isEditing ? (
+        ) : showExpanded ? (
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -185,7 +187,7 @@ export function AIInputBlock({ block, isEditing }: AIInputBlockProps) {
         ) : (
           <span className={`text-sm italic ${isDarkMode ? "text-zinc-600" : "text-slate-400"}`}>No file — click to edit</span>
         )
-      ) : isEditing ? (
+      ) : showExpanded ? (
         /* Text/JSON mode */
         <div className="relative">
           <textarea

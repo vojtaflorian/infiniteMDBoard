@@ -1,22 +1,93 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
-import { findBlockByRef } from "@/lib/execution/templateResolver";
+import { findBlockByRef, getBlockAlias } from "@/lib/execution/templateResolver";
 import type { Block, ViewerConfig } from "@/types";
 
 interface AIViewerBlockProps {
   block: Block;
   isEditing: boolean;
+  isExpanded?: boolean;
 }
 
 const RENDER_MODES = ["text", "json", "markdown", "html", "image"] as const;
 
-export function AIViewerBlock({ block, isEditing }: AIViewerBlockProps) {
+function SourceRefInput({ value, onChange, blocks, currentBlockId, isDarkMode }: {
+  value: string;
+  onChange: (v: string) => void;
+  blocks: Block[];
+  currentBlockId: string;
+  isDarkMode: boolean;
+}) {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showDropdown]);
+
+  const candidates = blocks
+    .filter((b) => b.id !== currentBlockId && (b.type === "ai-agent" || b.type === "ai-input"))
+    .map((b) => ({ alias: getBlockAlias(b), type: b.type, hasOutput: !!(b.executionOutput || (b.type === "ai-input" && b.content)) }));
+
+  return (
+    <div ref={wrapperRef} className="flex-1 relative">
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setShowDropdown(true)}
+        onMouseDown={(e) => e.stopPropagation()}
+        placeholder="{{block_alias}}"
+        className={`w-full text-xs font-mono px-2 py-1 rounded border outline-none ${
+          isDarkMode
+            ? "bg-zinc-800 border-zinc-700 text-zinc-300 placeholder:text-zinc-600"
+            : "bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-400"
+        }`}
+      />
+      {showDropdown && candidates.length > 0 && (
+        <div
+          className={`absolute top-full left-0 right-0 mt-1 z-20 rounded-lg border shadow-lg max-h-[150px] overflow-auto ${
+            isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-white border-slate-200"
+          }`}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {candidates.map((c) => (
+            <button
+              key={c.alias}
+              onClick={() => { onChange(`{{${c.alias}}}`); setShowDropdown(false); }}
+              className={`w-full text-left px-2 py-1.5 text-xs flex items-center gap-2 ${
+                isDarkMode ? "hover:bg-zinc-700 text-zinc-300" : "hover:bg-slate-100 text-slate-700"
+              }`}
+            >
+              <span className={`font-mono ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}>{`{{${c.alias}}}`}</span>
+              <span className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+                {c.type === "ai-agent" ? "agent" : "input"}
+              </span>
+              {c.hasOutput && (
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 ml-auto" title="Has output" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function AIViewerBlock({ block, isEditing, isExpanded }: AIViewerBlockProps) {
+  const showExpanded = isEditing || isExpanded;
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const blocks = useCanvasStore((s) => s.blocks);
   const { isDarkMode } = useUIStore();
@@ -97,17 +168,13 @@ export function AIViewerBlock({ block, isEditing }: AIViewerBlockProps) {
     <div className="space-y-2">
       {/* Controls */}
       <div className="flex items-center justify-between gap-2">
-        {isEditing ? (
-          <input
+        {showExpanded ? (
+          <SourceRefInput
             value={config.sourceRef ?? ""}
-            onChange={(e) => updateBlock(block.id, { viewerConfig: { ...config, sourceRef: e.target.value } })}
-            onMouseDown={(e) => e.stopPropagation()}
-            placeholder="{{block_alias}}"
-            className={`flex-1 text-xs font-mono px-2 py-1 rounded border outline-none ${
-              isDarkMode
-                ? "bg-zinc-800 border-zinc-700 text-zinc-300 placeholder:text-zinc-600"
-                : "bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-400"
-            }`}
+            onChange={(v) => updateBlock(block.id, { viewerConfig: { ...config, sourceRef: v } })}
+            blocks={blocks}
+            currentBlockId={block.id}
+            isDarkMode={isDarkMode}
           />
         ) : (
           <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${

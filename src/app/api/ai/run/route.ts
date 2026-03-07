@@ -48,6 +48,7 @@ function buildOpenAIBody(req: RunRequest) {
     max_tokens: req.maxTokens ?? 4096,
   };
 
+  body.stream_options = { include_usage: true };
   if (req.topP != null) body.top_p = req.topP;
   if (req.responseFormat === "json") {
     body.response_format = req.jsonSchema
@@ -83,7 +84,9 @@ function getHeaders(provider: string, apiKey: string): Record<string, string> {
   return headers;
 }
 
-async function* streamOpenAI(response: Response): AsyncGenerator<string> {
+type StreamChunk = { content: string } | { usage: { input: number; output: number } };
+
+async function* streamOpenAI(response: Response): AsyncGenerator<StreamChunk> {
   const reader = response.body?.getReader();
   if (!reader) return;
   const decoder = new TextDecoder();
@@ -103,8 +106,11 @@ async function* streamOpenAI(response: Response): AsyncGenerator<string> {
       if (data === "[DONE]") return;
       try {
         const parsed = JSON.parse(data);
+        if (parsed.usage) {
+          yield { usage: { input: parsed.usage.prompt_tokens ?? 0, output: parsed.usage.completion_tokens ?? 0 } };
+        }
         const content = parsed.choices?.[0]?.delta?.content;
-        if (content) yield content;
+        if (content) yield { content };
       } catch {
         // skip malformed chunks
       }
@@ -112,11 +118,12 @@ async function* streamOpenAI(response: Response): AsyncGenerator<string> {
   }
 }
 
-async function* streamAnthropic(response: Response): AsyncGenerator<string> {
+async function* streamAnthropic(response: Response): AsyncGenerator<StreamChunk> {
   const reader = response.body?.getReader();
   if (!reader) return;
   const decoder = new TextDecoder();
   let buffer = "";
+  let inputTokens = 0;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -131,8 +138,14 @@ async function* streamAnthropic(response: Response): AsyncGenerator<string> {
       const data = trimmed.slice(6);
       try {
         const parsed = JSON.parse(data);
+        if (parsed.type === "message_start" && parsed.message?.usage) {
+          inputTokens = parsed.message.usage.input_tokens ?? 0;
+        }
         if (parsed.type === "content_block_delta" && parsed.delta?.text) {
-          yield parsed.delta.text;
+          yield { content: parsed.delta.text };
+        }
+        if (parsed.type === "message_delta" && parsed.usage) {
+          yield { usage: { input: inputTokens, output: parsed.usage.output_tokens ?? 0 } };
         }
       } catch {
         // skip
@@ -249,7 +262,7 @@ export async function POST(req: NextRequest) {
         const gen = isAnthropic ? streamAnthropic(response) : streamOpenAI(response);
         try {
           for await (const chunk of gen) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         } catch (err) {

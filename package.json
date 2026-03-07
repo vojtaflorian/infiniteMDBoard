@@ -1,6 +1,6 @@
 {
   "name": "infinite-md-board",
-  "version": "3.1.1",
+  "version": "3.3.0",
   "description": "Infinite canvas markdown board with project management",
   "private": true,
   "scripts": {

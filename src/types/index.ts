@@ -84,6 +84,7 @@ export interface Block {
   executionError?: string;
   executionDurationMs?: number;
   executionStartedAt?: number;
+  executionTokens?: { input: number; output: number };
 }
 
 export interface Connection {

@@ -30,6 +30,7 @@ interface CanvasState {
   resizingBlockId: string | null;
   connectingFromId: string | null;
   isPanning: boolean;
+  expandedBlockIds: string[];
 
   addBlock: (type: BlockType, position: Position, initial?: Partial<Block>) => string;
   updateBlock: (id: string, updates: Partial<Block>) => void;
@@ -52,7 +53,8 @@ interface CanvasState {
   setResizingBlock: (id: string | null) => void;
   setConnectingFrom: (id: string | null) => void;
   setIsPanning: (panning: boolean) => void;
-  setBlockExecution: (id: string, state: ExecutionState, output?: string, error?: string) => void;
+  toggleBlockExpanded: (id: string) => void;
+  setBlockExecution: (id: string, state: ExecutionState, output?: string, error?: string, tokens?: { input: number; output: number }) => void;
   clearBlockExecution: (id: string) => void;
   loadProject: (project: Project) => void;
   toProjectData: () => Pick<Project, "blocks" | "connections" | "camera">;
@@ -70,6 +72,7 @@ const initialState = {
   resizingBlockId: null as string | null,
   connectingFromId: null as string | null,
   isPanning: false,
+  expandedBlockIds: [] as string[],
 };
 
 export const useCanvasStore = create<CanvasState>()(
@@ -117,13 +120,21 @@ export const useCanvasStore = create<CanvasState>()(
         };
         const d = defaults[type];
         const { width: _w, title: _t, content: _c, color: _co, ...extraDefaults } = d;
+        // Generate unique title for AI blocks
+        const baseTitle = d.title ?? "";
+        let title = baseTitle;
+        if (type.startsWith("ai-")) {
+          const existing = get().blocks.filter((b) => b.type === type);
+          const n = existing.length + 1;
+          title = `${baseTitle} ${n}`;
+        }
         const block: Block = {
           id: generateId(),
           type,
           position,
           width: d.width ?? 250,
           height: d.height ?? 0,
-          title: d.title ?? "",
+          title,
           content: d.content ?? "",
           color: d.color,
           ...extraDefaults,
@@ -134,6 +145,7 @@ export const useCanvasStore = create<CanvasState>()(
         set((s) => ({
           blocks: [...s.blocks, block],
           editingBlockId: block.id,
+          expandedBlockIds: type.startsWith("ai-") ? [...s.expandedBlockIds, block.id] : s.expandedBlockIds,
         }));
         return block.id;
       },
@@ -155,6 +167,7 @@ export const useCanvasStore = create<CanvasState>()(
           ),
           selectedBlockIds: s.selectedBlockIds.filter((bid) => bid !== id),
           editingBlockId: s.editingBlockId === id ? null : s.editingBlockId,
+          expandedBlockIds: s.expandedBlockIds.filter((bid) => bid !== id),
         }));
       },
 
@@ -284,7 +297,13 @@ export const useCanvasStore = create<CanvasState>()(
       setConnectingFrom: (id) => set({ connectingFromId: id }),
       setIsPanning: (panning) => set({ isPanning: panning }),
 
-      setBlockExecution: (id, executionState, executionOutput, executionError) => {
+      toggleBlockExpanded: (id) => set((s) => ({
+        expandedBlockIds: s.expandedBlockIds.includes(id)
+          ? s.expandedBlockIds.filter((x) => x !== id)
+          : [...s.expandedBlockIds, id],
+      })),
+
+      setBlockExecution: (id, executionState, executionOutput, executionError, executionTokens) => {
         set((s) => ({
           blocks: s.blocks.map((b) => {
             if (b.id !== id) return b;
@@ -292,10 +311,12 @@ export const useCanvasStore = create<CanvasState>()(
               executionState,
               executionOutput: executionOutput ?? b.executionOutput,
               executionError: executionState === "error" ? (executionError ?? b.executionError) : undefined,
+              executionTokens: executionTokens ?? b.executionTokens,
             };
             if (executionState === "running") {
               updates.executionStartedAt = Date.now();
               updates.executionDurationMs = undefined;
+              updates.executionTokens = undefined;
             } else if (executionState === "success" || executionState === "error") {
               updates.executionDurationMs = b.executionStartedAt
                 ? Date.now() - b.executionStartedAt

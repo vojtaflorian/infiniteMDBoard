@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft, Loader2, MessageSquare, Send, X } from "lucide-react";
+import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft, Loader2, MessageSquare, Send, X, ChevronUp, ChevronDown, Play } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { createLogger } from "@/lib/logger";
@@ -71,6 +71,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const addConnection = useCanvasStore((s) => s.addConnection);
   const setTool = useCanvasStore((s) => s.setTool);
   const updateBlock = useCanvasStore((s) => s.updateBlock);
+  const isExpanded = useCanvasStore((s) => s.expandedBlockIds.includes(block.id));
+  const toggleBlockExpanded = useCanvasStore((s) => s.toggleBlockExpanded);
   const { isDarkMode } = useUIStore();
   const presentationMode = useUIStore((s) => s.presentationMode);
   const searchQuery = useUIStore((s) => s.searchQuery);
@@ -510,11 +512,11 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             case "frame":
               return <FrameBlock block={block} isEditing={isEditing} />;
             case "ai-agent":
-              return <AIAgentBlock block={block} isEditing={isEditing} />;
+              return <AIAgentBlock block={block} isEditing={isEditing} isExpanded={isExpanded} />;
             case "ai-input":
-              return <AIInputBlock block={block} isEditing={isEditing} />;
+              return <AIInputBlock block={block} isEditing={isEditing} isExpanded={isExpanded} />;
             case "ai-viewer":
-              return <AIViewerBlock block={block} isEditing={isEditing} />;
+              return <AIViewerBlock block={block} isEditing={isEditing} isExpanded={isExpanded} />;
           }
         })()}
         {/* AI processing overlay */}
@@ -531,6 +533,29 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           </div>
         )}
       </div>
+
+      {/* Expand/collapse toggle for AI blocks */}
+      {!presentationMode && block.type.startsWith("ai-") && (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleBlockExpanded(block.id); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className={`absolute -top-3 -right-3 z-10 p-1 rounded-full shadow-sm border transition-opacity opacity-0 group-hover:opacity-100 ${
+            isDarkMode
+              ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-blue-400"
+              : "bg-white border-slate-200 text-slate-500 hover:text-blue-500"
+          }`}
+          title={isExpanded ? "Collapse" : "Expand"}
+        >
+          {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </button>
+      )}
+
+      {/* Error banner — always visible below AI blocks */}
+      {block.type.startsWith("ai-") && block.executionState === "error" && block.executionError && (
+        <div className="mt-1 px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-500 text-[10px] whitespace-pre-wrap break-words max-h-[60px] overflow-auto">
+          {block.executionError}
+        </div>
+      )}
 
       {/* Connection overlay when connect tool is active */}
       {!presentationMode && activeTool === "connect" && (

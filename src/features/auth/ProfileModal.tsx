@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useUIStore } from "@/stores/uiStore";
 import { geminiKeySchema } from "@/lib/validation";
-import { X, Key, Eye, EyeOff, Trash2 } from "lucide-react";
+import { X, Key, Eye, EyeOff, Trash2, Settings } from "lucide-react";
+import { useUIStore as useUI } from "@/stores/uiStore";
 
 interface ProfileModalProps {
   open: boolean;
@@ -185,6 +186,24 @@ export function ProfileModal({ open, onClose, inline }: ProfileModalProps) {
               aistudio.google.com/apikey
             </a>
           </p>
+        </div>
+
+        {/* AI Workflow API Keys */}
+        <div className="mb-4">
+          <button
+            onClick={() => { useUI.getState().setApiKeySettingsOpen(true); onClose(); }}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
+              isDarkMode
+                ? "border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                : "border-slate-200 hover:bg-slate-50 text-slate-700"
+            }`}
+          >
+            <Settings size={14} className="opacity-60" />
+            AI Workflow API Keys
+            <span className={`ml-auto text-[10px] ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+              OpenAI, Gemini, Anthropic…
+            </span>
+          </button>
         </div>
 
         {error && <p className="text-red-400 text-xs mb-2">{error}</p>}

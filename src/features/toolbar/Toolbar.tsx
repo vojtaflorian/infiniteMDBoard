@@ -24,7 +24,7 @@ import {
   Bot,
   FileInput,
   Eye,
-  Key,
+  PlayCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -37,6 +37,7 @@ import { AuthModal } from "@/features/auth/AuthModal";
 import { ProfileModal } from "@/features/auth/ProfileModal";
 import { ShareDialog } from "@/features/share/ShareDialog";
 import { ApiKeySettings } from "@/features/settings/ApiKeySettings";
+import { runPipeline } from "@/lib/execution/engine";
 import {
   downloadJson,
   exportCanvasAsPng,
@@ -66,7 +67,8 @@ export function Toolbar() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [apiKeySettingsOpen, setApiKeySettingsOpen] = useState(false);
+  const apiKeySettingsOpen = useUIStore((s) => s.apiKeySettingsOpen);
+  const setApiKeySettingsOpen = useUIStore((s) => s.setApiKeySettingsOpen);
 
   // Close export dropdown on outside click
   useEffect(() => {
@@ -281,6 +283,13 @@ export function Toolbar() {
       >
         <Eye size={20} />
       </button>
+      <button
+        onClick={() => runPipeline()}
+        className="p-3 rounded-xl hover:bg-white/10 transition-all text-orange-400"
+        title="Run full pipeline"
+      >
+        <PlayCircle size={20} />
+      </button>
       {toolButton(
         "connect",
         <ArrowRight size={20} />,
@@ -343,13 +352,6 @@ export function Toolbar() {
           </div>
         )}
       </div>
-      <button
-        onClick={() => setApiKeySettingsOpen(true)}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="API Keys"
-      >
-        <Key size={20} />
-      </button>
       <button
         onClick={toggleTheme}
         className="p-3 rounded-xl hover:bg-white/10 transition-all"

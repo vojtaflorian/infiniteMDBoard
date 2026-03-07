@@ -1,29 +1,45 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Play, Square, ChevronDown, ChevronRight, Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Play, Square, ChevronDown, ChevronRight, Loader2, CheckCircle2, XCircle, AlertCircle, Copy, PlayCircle } from "lucide-react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { getBlockAlias } from "@/lib/execution/templateResolver";
 import { getApiKeys } from "@/lib/apiKeyStore";
-import { runSingleBlock } from "@/lib/execution/engine";
+import { runSingleBlock, runPipeline } from "@/lib/execution/engine";
 import type { AIConfig, AIProvider, Block } from "@/types";
 
 interface AIAgentBlockProps {
   block: Block;
   isEditing: boolean;
+  isExpanded?: boolean;
 }
 
-const PROVIDER_MODELS: Record<AIProvider, string[]> = {
+const PROVIDER_MODEL_HINTS: Record<AIProvider, string[]> = {
   openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o3-mini", "o4-mini"],
   google: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"],
   anthropic: ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
   custom: [],
 };
 
+const TEMP_MAX: Record<AIProvider, number> = { openai: 2, google: 2, anthropic: 1, custom: 2 };
+
+const LAST_MODEL_KEY = "ai-last-model";
+
+function getLastModel(provider: AIProvider): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(`${LAST_MODEL_KEY}-${provider}`) ?? "";
+}
+
+function saveLastModel(provider: AIProvider, model: string) {
+  if (typeof window === "undefined" || !model) return;
+  localStorage.setItem(`${LAST_MODEL_KEY}-${provider}`, model);
+}
+
 type Section = "model" | "prompts" | "parameters" | "output" | "preview";
 
-export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
+export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps) {
+  const showExpanded = isEditing || isExpanded;
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const blocks = useCanvasStore((s) => s.blocks);
   const { isDarkMode } = useUIStore();
@@ -36,6 +52,14 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
   const [streamingText, setStreamingText] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const schemaTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyAlias = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(`{{${alias}}}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
 
   const apiKeys = typeof window !== "undefined" ? getApiKeys() : [];
   const providerKeys = apiKeys.filter((k) => k.provider === config.provider);
@@ -61,6 +85,20 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
     setStreamingText("");
     abortRef.current = new AbortController();
     await runSingleBlock(block, blocks, setStreamingText, abortRef.current.signal);
+  };
+
+  const handleRunPipeline = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (block.executionState === "running") return;
+    abortRef.current = new AbortController();
+    await runPipeline(block.id, undefined, undefined, abortRef.current.signal);
+  };
+
+  const handleCopyOutput = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (block.executionOutput) {
+      navigator.clipboard.writeText(block.executionOutput);
+    }
   };
 
   useEffect(() => {
@@ -98,15 +136,22 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
   }`;
 
   // --- COLLAPSED VIEW ---
-  if (!isEditing) {
+  if (!showExpanded) {
     return (
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-            isDarkMode ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-700"
-          }`}>
-            {`{{${alias}}}`}
-          </span>
+          <button
+            onClick={copyAlias}
+            onMouseDown={(e) => e.stopPropagation()}
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded cursor-copy transition-colors ${
+              copied
+                ? "bg-green-600/30 text-green-400"
+                : isDarkMode ? "bg-blue-900/50 text-blue-400 hover:bg-blue-900/70" : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+            }`}
+            title="Click to copy reference"
+          >
+            {copied ? "Copied!" : `{{${alias}}}`}
+          </button>
           <div className="flex items-center gap-1.5">
             {config.model && (
               <span className={`text-[10px] px-1.5 py-0.5 rounded ${
@@ -126,21 +171,40 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
         {block.executionOutput && (
           <p className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
             Output: {(block.executionOutput.length / 1000).toFixed(1)}k chars
+            {block.executionTokens && (
+              <span className="ml-2">
+                ({block.executionTokens.input + block.executionTokens.output} tok)
+              </span>
+            )}
           </p>
         )}
-        <button
-          onClick={handleRun}
-          onMouseDown={(e) => e.stopPropagation()}
-          className={`w-full flex items-center justify-center gap-1 py-1 rounded text-xs font-medium transition-colors ${
-            block.executionState === "running"
-              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-              : isDarkMode
-                ? "bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
-                : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-          }`}
-        >
-          {block.executionState === "running" ? <><Square size={12} /> Stop</> : <><Play size={12} /> Run</>}
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={handleRun}
+            onMouseDown={(e) => e.stopPropagation()}
+            className={`flex-1 flex items-center justify-center gap-1 py-1 rounded text-xs font-medium transition-colors ${
+              block.executionState === "running"
+                ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                : isDarkMode
+                  ? "bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
+                  : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+            }`}
+          >
+            {block.executionState === "running" ? <><Square size={12} /> Stop</> : <><Play size={12} /> Run</>}
+          </button>
+          <button
+            onClick={handleRunPipeline}
+            onMouseDown={(e) => e.stopPropagation()}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+              isDarkMode
+                ? "bg-purple-600/20 text-purple-400 hover:bg-purple-600/30"
+                : "bg-purple-100 text-purple-600 hover:bg-purple-200"
+            }`}
+            title="Run pipeline from this block"
+          >
+            <PlayCircle size={12} /> Pipeline
+          </button>
+        </div>
       </div>
     );
   }
@@ -150,11 +214,17 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
     <div className="space-y-1" onMouseDown={(e) => e.stopPropagation()}>
       {/* Alias */}
       <div className="flex items-center gap-2 mb-2">
-        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-          isDarkMode ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 text-blue-700"
-        }`}>
-          {`{{${alias}}}`}
-        </span>
+        <button
+          onClick={copyAlias}
+          className={`text-[10px] font-mono px-1.5 py-0.5 rounded cursor-copy transition-colors ${
+            copied
+              ? "bg-green-600/30 text-green-400"
+              : isDarkMode ? "bg-blue-900/50 text-blue-400 hover:bg-blue-900/70" : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+          }`}
+          title="Click to copy reference"
+        >
+          {copied ? "Copied!" : `{{${alias}}}`}
+        </button>
         <input
           value={block.alias ?? ""}
           onChange={(e) => updateBlock(block.id, { alias: e.target.value || undefined })}
@@ -170,7 +240,10 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
       {sectionHeader("model", "Model")}
       {openSections.has("model") && (
         <div className="space-y-1.5 pl-3 pb-2">
-          <select value={config.provider} onChange={(e) => updateConfig({ provider: e.target.value as AIProvider, model: "" })} className={inputClass}>
+          <select value={config.provider} onChange={(e) => {
+            const p = e.target.value as AIProvider;
+            updateConfig({ provider: p, model: getLastModel(p) });
+          }} className={inputClass}>
             <option value="openai">OpenAI</option>
             <option value="google">Google (Gemini)</option>
             <option value="anthropic">Anthropic</option>
@@ -179,22 +252,27 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
           {config.provider === "custom" && (
             <input value={config.endpoint ?? ""} onChange={(e) => updateConfig({ endpoint: e.target.value })} placeholder="https://api.example.com/v1/chat/completions" className={inputClass} />
           )}
-          {config.provider === "custom" ? (
-            <input value={config.model} onChange={(e) => updateConfig({ model: e.target.value })} placeholder="model-name" className={inputClass} />
-          ) : (
-            <select value={config.model} onChange={(e) => updateConfig({ model: e.target.value })} className={inputClass}>
-              <option value="">Select model...</option>
-              {PROVIDER_MODELS[config.provider].map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          )}
+          <input
+            list={`models-${block.id}`}
+            value={config.model}
+            onChange={(e) => { updateConfig({ model: e.target.value }); saveLastModel(config.provider, e.target.value); }}
+            placeholder={PROVIDER_MODEL_HINTS[config.provider][0] ?? "model-name"}
+            className={inputClass}
+          />
+          <datalist id={`models-${block.id}`}>
+            {PROVIDER_MODEL_HINTS[config.provider].map((m) => <option key={m} value={m} />)}
+          </datalist>
           <select value={config.apiKeyId} onChange={(e) => updateConfig({ apiKeyId: e.target.value })} className={inputClass}>
             <option value="">Select API key...</option>
             {providerKeys.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
           </select>
           {providerKeys.length === 0 && (
-            <p className={`text-[10px] ${isDarkMode ? "text-yellow-500" : "text-yellow-600"}`}>
-              No API keys for {config.provider}. Add one via the Key icon in toolbar.
-            </p>
+            <button
+              onClick={() => useUIStore.getState().setApiKeySettingsOpen(true)}
+              className={`text-[10px] text-left underline ${isDarkMode ? "text-yellow-500 hover:text-yellow-400" : "text-yellow-600 hover:text-yellow-500"}`}
+            >
+              No API keys for {config.provider}. Click to add one.
+            </button>
           )}
         </div>
       )}
@@ -228,7 +306,7 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
         <div className="space-y-1.5 pl-3 pb-2">
           <div className="flex items-center gap-2">
             <label className={`text-[10px] w-20 shrink-0 ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>Temperature</label>
-            <input type="range" min="0" max="2" step="0.1" value={config.temperature} onChange={(e) => updateConfig({ temperature: parseFloat(e.target.value) })} className="flex-1" />
+            <input type="range" min="0" max={TEMP_MAX[config.provider]} step="0.1" value={Math.min(config.temperature, TEMP_MAX[config.provider])} onChange={(e) => updateConfig({ temperature: parseFloat(e.target.value) })} className="flex-1" />
             <span className={`text-[10px] w-8 text-right ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>{config.temperature}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -348,7 +426,18 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
       {/* Output Preview Section */}
       {sectionHeader("preview", "Output Preview")}
       {openSections.has("preview") && (
-        <div className="pl-3 pb-2">
+        <div className="pl-3 pb-2 relative">
+          {block.executionOutput && (
+            <button
+              onClick={handleCopyOutput}
+              className={`absolute top-0 right-0 p-1 rounded ${
+                isDarkMode ? "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              }`}
+              title="Copy output"
+            >
+              <Copy size={12} />
+            </button>
+          )}
           {block.executionState === "running" && streamingText ? (
             <pre className={`text-xs font-mono whitespace-pre-wrap break-words max-h-[200px] overflow-auto ${
               isDarkMode ? "text-zinc-300" : "text-slate-700"
@@ -376,22 +465,41 @@ export function AIAgentBlock({ block, isEditing }: AIAgentBlockProps) {
               No output yet — click Run
             </p>
           )}
+          {block.executionTokens && (
+            <div className={`mt-1 text-[10px] font-mono ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+              ↑{block.executionTokens.input} ↓{block.executionTokens.output} tokens ({block.executionTokens.input + block.executionTokens.output} total)
+            </div>
+          )}
         </div>
       )}
 
-      {/* Run button */}
-      <button
-        onClick={handleRun}
-        className={`w-full flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium transition-colors ${
-          block.executionState === "running"
-            ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-            : isDarkMode
-              ? "bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
-              : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-        }`}
-      >
-        {block.executionState === "running" ? <><Square size={12} /> Stop</> : <><Play size={12} /> Run</>}
-      </button>
+      {/* Run buttons */}
+      <div className="flex gap-1">
+        <button
+          onClick={handleRun}
+          className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded text-xs font-medium transition-colors ${
+            block.executionState === "running"
+              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+              : isDarkMode
+                ? "bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
+                : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+          }`}
+        >
+          {block.executionState === "running" ? <><Square size={12} /> Stop</> : <><Play size={12} /> Run</>}
+        </button>
+        <button
+          onClick={handleRunPipeline}
+          onMouseDown={(e) => e.stopPropagation()}
+          className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+            isDarkMode
+              ? "bg-purple-600/20 text-purple-400 hover:bg-purple-600/30"
+              : "bg-purple-100 text-purple-600 hover:bg-purple-200"
+          }`}
+          title="Run pipeline from this block"
+        >
+          <PlayCircle size={12} /> Pipeline
+        </button>
+      </div>
     </div>
   );
 }
