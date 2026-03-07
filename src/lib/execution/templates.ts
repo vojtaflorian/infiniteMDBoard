@@ -1,5 +1,6 @@
 import type { Block, Connection } from "@/types";
 import { generateId } from "@/lib/id";
+import { getDefaultAIConfig } from "./aiDefaults";
 
 export interface WorkflowTemplate {
   name: string;
@@ -32,11 +33,12 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     description: "Input text \u2192 AI summarizes \u2192 View result",
     icon: "\ud83d\udcdd",
     create: () => {
+      const defaults = getDefaultAIConfig("openai");
       const input = makeBlock("ai-input", 100, 200, { title: "Input Text", inputConfig: { format: "text" } });
       const agent = makeBlock("ai-agent", 500, 200, {
         title: "Summarizer",
         aiConfig: {
-          provider: "openai", model: "", apiKeyId: "", temperature: 0.7, maxTokens: 2048,
+          provider: "openai", ...defaults, temperature: 0.7, maxTokens: 2048,
           systemPrompt: "You are a concise summarizer. Provide clear, well-structured summaries.",
           userPrompt: `Summarize the following text in 3-5 bullet points:\n\n{{${input.title!.toLowerCase().replace(/\s+/g, "_")}}}`,
           responseFormat: "text",
@@ -58,10 +60,11 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     icon: "\ud83c\udf10",
     create: () => {
       const input = makeBlock("ai-input", 100, 200, { title: "Source Text", inputConfig: { format: "text" } });
+      const defaults = getDefaultAIConfig("openai");
       const agent = makeBlock("ai-agent", 500, 200, {
         title: "Translator",
         aiConfig: {
-          provider: "openai", model: "", apiKeyId: "", temperature: 0.3, maxTokens: 4096,
+          provider: "openai", ...defaults, temperature: 0.3, maxTokens: 4096,
           systemPrompt: "You are a professional translator. Translate accurately, preserving tone and meaning.",
           userPrompt: `Translate the following text to English. If the text is already in English, translate it to Czech.\n\n{{${input.title!.toLowerCase().replace(/\s+/g, "_")}}}`,
           responseFormat: "text",
@@ -82,11 +85,12 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     description: "Input \u2192 Write draft \u2192 Critic reviews \u2192 View",
     icon: "\ud83d\udd04",
     create: () => {
+      const defaults = getDefaultAIConfig("openai");
       const input = makeBlock("ai-input", 100, 200, { title: "Topic", inputConfig: { format: "text" } });
       const writer = makeBlock("ai-agent", 500, 100, {
         title: "Writer",
         aiConfig: {
-          provider: "openai", model: "", apiKeyId: "", temperature: 0.8, maxTokens: 4096,
+          provider: "openai", ...defaults, temperature: 0.8, maxTokens: 4096,
           systemPrompt: "You are a skilled writer. Create well-structured, engaging content.",
           userPrompt: `Write a detailed article about the following topic:\n\n{{${input.title!.toLowerCase().replace(/\s+/g, "_")}}}`,
           responseFormat: "text",
@@ -95,7 +99,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const critic = makeBlock("ai-agent", 500, 350, {
         title: "Critic",
         aiConfig: {
-          provider: "openai", model: "", apiKeyId: "", temperature: 0.5, maxTokens: 4096,
+          provider: "openai", ...defaults, temperature: 0.5, maxTokens: 4096,
           systemPrompt: "You are a constructive critic. Review the text and suggest improvements. Then provide an improved version.",
           userPrompt: `Review and improve this text:\n\n{{${writer.title!.toLowerCase().replace(/\s+/g, "_")}}}`,
           responseFormat: "text",
@@ -120,11 +124,12 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     description: "Input \u2192 Agent A processes \u2192 Agent B refines \u2192 View",
     icon: "\u26d3\ufe0f",
     create: () => {
+      const defaults = getDefaultAIConfig("openai");
       const input = makeBlock("ai-input", 100, 200, { title: "Data", inputConfig: { format: "text" } });
       const agentA = makeBlock("ai-agent", 450, 200, {
         title: "Analyzer",
         aiConfig: {
-          provider: "openai", model: "", apiKeyId: "", temperature: 0.7, maxTokens: 4096,
+          provider: "openai", ...defaults, temperature: 0.7, maxTokens: 4096,
           systemPrompt: "You are a data analyst. Extract key insights and patterns.",
           userPrompt: `Analyze the following data and list key findings:\n\n{{${input.title!.toLowerCase().replace(/\s+/g, "_")}}}`,
           responseFormat: "text",
@@ -133,7 +138,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
       const agentB = makeBlock("ai-agent", 850, 200, {
         title: "Reporter",
         aiConfig: {
-          provider: "openai", model: "", apiKeyId: "", temperature: 0.7, maxTokens: 4096,
+          provider: "openai", ...defaults, temperature: 0.7, maxTokens: 4096,
           systemPrompt: "You are a report writer. Create clear, actionable reports from analysis.",
           userPrompt: `Create a structured report from these findings:\n\n{{${agentA.title!.toLowerCase().replace(/\s+/g, "_")}}}`,
           responseFormat: "text",

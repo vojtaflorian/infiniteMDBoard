@@ -7,10 +7,11 @@ import { WORKFLOW_TEMPLATES, type WorkflowTemplate } from "@/lib/execution/templ
 interface TemplatePickerProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (template: WorkflowTemplate) => void;
+  onSelect?: (template: WorkflowTemplate) => void;
+  onInsert?: (template: WorkflowTemplate) => void;
 }
 
-export function TemplatePicker({ open, onClose, onSelect }: TemplatePickerProps) {
+export function TemplatePicker({ open, onClose, onSelect, onInsert }: TemplatePickerProps) {
   const isDarkMode = useUIStore((s) => s.isDarkMode);
 
   if (!open) return null;
@@ -46,7 +47,14 @@ export function TemplatePicker({ open, onClose, onSelect }: TemplatePickerProps)
           {WORKFLOW_TEMPLATES.map((t) => (
             <button
               key={t.name}
-              onClick={() => onSelect(t)}
+              onClick={() => {
+                if (onInsert) {
+                  onInsert(t);
+                } else if (onSelect) {
+                  onSelect(t);
+                }
+                onClose();
+              }}
               className={`text-left rounded-lg p-4 border transition-all ${
                 isDarkMode
                   ? "border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800"

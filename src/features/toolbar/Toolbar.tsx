@@ -24,7 +24,7 @@ import {
   Bot,
   FileInput,
   Eye,
-  PlayCircle,
+  LayoutTemplate,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -36,8 +36,7 @@ import { createLogger } from "@/lib/logger";
 import { AuthModal } from "@/features/auth/AuthModal";
 import { ProfileModal } from "@/features/auth/ProfileModal";
 import { ShareDialog } from "@/features/share/ShareDialog";
-import { ApiKeySettings } from "@/features/settings/ApiKeySettings";
-import { runPipeline } from "@/lib/execution/engine";
+import { TemplatePicker } from "@/features/projects/TemplatePicker";
 import {
   downloadJson,
   exportCanvasAsPng,
@@ -45,6 +44,7 @@ import {
   getBlocksBoundingBox,
   importProjectFromJson,
 } from "@/lib/storage";
+import { Tooltip } from "@/components/Tooltip";
 import type { BlockType, Tool } from "@/types";
 
 const log = createLogger("Toolbar");
@@ -67,8 +67,17 @@ export function Toolbar() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const apiKeySettingsOpen = useUIStore((s) => s.apiKeySettingsOpen);
   const setApiKeySettingsOpen = useUIStore((s) => s.setApiKeySettingsOpen);
+
+  // When apiKeySettingsOpen is triggered (e.g. from AI block), auto-open profile modal on API keys tab
+  useEffect(() => {
+    if (apiKeySettingsOpen) {
+      setProfileOpen(true);
+      setApiKeySettingsOpen(false);
+    }
+  }, [apiKeySettingsOpen, setApiKeySettingsOpen]);
 
   // Close export dropdown on outside click
   useEffect(() => {
@@ -161,29 +170,29 @@ export function Toolbar() {
     title: string,
     activeColor = "bg-blue-600",
   ) => (
-    <button
-      key={tool}
-      onClick={() => setTool(activeTool === tool ? "select" : tool)}
-      className={`p-3 rounded-xl transition-all ${
-        activeTool === tool
-          ? `${activeColor} text-white`
-          : "hover:bg-white/10"
-      }`}
-      title={title}
-    >
-      {icon}
-    </button>
+    <Tooltip label={title} key={tool}>
+      <button
+        onClick={() => setTool(activeTool === tool ? "select" : tool)}
+        className={`p-3 rounded-xl transition-all ${
+          activeTool === tool
+            ? `${activeColor} text-white`
+            : "hover:bg-white/10"
+        }`}
+      >
+        {icon}
+      </button>
+    </Tooltip>
   );
 
   return (
     <>
     {/* Project name floating below toolbar */}
     {activeProjectId && (
-      <div className="absolute top-[72px] left-1/2 -translate-x-1/2 z-40">
+      <div className="absolute top-[80px] left-1/2 -translate-x-1/2 z-40">
         {isEditingName ? (
           <input
             autoFocus
-            className={`text-sm font-semibold bg-transparent outline-none border-b px-3 py-1 text-center ${
+            className={`text-base font-bold bg-transparent outline-none border-b px-4 py-1.5 text-center ${
               isDarkMode
                 ? "text-zinc-200 border-zinc-500 focus:border-zinc-300"
                 : "text-slate-700 border-slate-400 focus:border-slate-600"
@@ -200,10 +209,10 @@ export function Toolbar() {
         ) : (
           <button
             onClick={() => setIsEditingName(true)}
-            className={`text-sm font-semibold px-3 py-1 rounded-lg transition-colors ${
+            className={`text-base font-bold px-4 py-1.5 rounded-full transition-colors ${
               isDarkMode
-                ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/60"
+                ? "text-zinc-200 bg-white/5 hover:bg-white/10"
+                : "text-slate-700 bg-black/5 hover:bg-black/10"
             }`}
             title="Click to rename project"
           >
@@ -214,82 +223,92 @@ export function Toolbar() {
     )}
 
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl">
-      <button
-        onClick={handleBack}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="Back to projects"
-      >
-        <ArrowLeft size={20} />
-      </button>
+      <Tooltip label="Back to projects">
+        <button
+          onClick={handleBack}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+        >
+          <ArrowLeft size={20} />
+        </button>
+      </Tooltip>
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
       {toolButton("select", <MousePointer2 size={20} />, "Select tool")}
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
-      <button
-        onClick={() => handleAddBlock("text")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-emerald-400"
-        title="Add text block"
-      >
-        <Type size={20} />
-      </button>
-      <button
-        onClick={() => handleAddBlock("image")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-amber-400"
-        title="Add image block"
-      >
-        <ImageIcon size={20} />
-      </button>
-      <button
-        onClick={() => handleAddBlock("link")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-sky-400"
-        title="Add link block"
-      >
-        <Link size={20} />
-      </button>
-      <button
-        onClick={() => handleAddBlock("sticky")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-yellow-400"
-        title="Add sticky note"
-      >
-        <StickyNote size={20} />
-      </button>
-      <button
-        onClick={() => handleAddBlock("frame")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-slate-400"
-        title="Add frame"
-      >
-        <Frame size={20} />
-      </button>
+      <Tooltip label="Text block">
+        <button
+          onClick={() => handleAddBlock("text")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-emerald-400"
+        >
+          <Type size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Image block">
+        <button
+          onClick={() => handleAddBlock("image")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-amber-400"
+        >
+          <ImageIcon size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Link block">
+        <button
+          onClick={() => handleAddBlock("link")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-sky-400"
+        >
+          <Link size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Sticky note">
+        <button
+          onClick={() => handleAddBlock("sticky")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-yellow-400"
+        >
+          <StickyNote size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Frame">
+        <button
+          onClick={() => handleAddBlock("frame")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-slate-400"
+        >
+          <Frame size={20} />
+        </button>
+      </Tooltip>
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
-      <button
-        onClick={() => handleAddBlock("ai-agent")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-blue-400"
-        title="Add AI Agent block"
-      >
-        <Bot size={20} />
-      </button>
-      <button
-        onClick={() => handleAddBlock("ai-input")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-green-400"
-        title="Add Input block"
-      >
-        <FileInput size={20} />
-      </button>
-      <button
-        onClick={() => handleAddBlock("ai-viewer")}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-purple-400"
-        title="Add Viewer block"
-      >
-        <Eye size={20} />
-      </button>
-      <button
-        onClick={() => runPipeline()}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all text-orange-400"
-        title="Run full pipeline"
-      >
-        <PlayCircle size={20} />
-      </button>
+      <Tooltip label="AI Agent">
+        <button
+          onClick={() => handleAddBlock("ai-agent")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-blue-400"
+        >
+          <Bot size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Input">
+        <button
+          onClick={() => handleAddBlock("ai-input")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-green-400"
+        >
+          <FileInput size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Viewer">
+        <button
+          onClick={() => handleAddBlock("ai-viewer")}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-purple-400"
+        >
+          <Eye size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Add workflow">
+        <button
+          onClick={() => setTemplatePickerOpen(true)}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all text-cyan-400"
+        >
+          <LayoutTemplate size={20} />
+        </button>
+      </Tooltip>
       {toolButton(
         "connect",
         <ArrowRight size={20} />,
@@ -298,39 +317,43 @@ export function Toolbar() {
       )}
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
-      <button
-        onClick={() => setSearchOpen(true)}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="Search blocks (Cmd+F)"
-      >
-        <Search size={20} />
-      </button>
+      <Tooltip label="Search · ⌘F">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+        >
+          <Search size={20} />
+        </button>
+      </Tooltip>
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
-      <button
-        onClick={handleUndo}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="Undo (Ctrl+Z)"
-      >
-        <Undo2 size={20} />
-      </button>
-      <button
-        onClick={handleRedo}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="Redo (Ctrl+Shift+Z)"
-      >
-        <Redo2 size={20} />
-      </button>
+      <Tooltip label="Undo · ⌘Z">
+        <button
+          onClick={handleUndo}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+        >
+          <Undo2 size={20} />
+        </button>
+      </Tooltip>
+      <Tooltip label="Redo · ⌘⇧Z">
+        <button
+          onClick={handleRedo}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+        >
+          <Redo2 size={20} />
+        </button>
+      </Tooltip>
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
       <div className="relative" data-export-dropdown onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={() => setExportOpen(!exportOpen)}
-          className="p-3 rounded-xl hover:bg-white/10 transition-all"
-          title="Export / Import"
-        >
-          <Download size={20} />
-        </button>
+        <Tooltip label="Export / Import">
+          <button
+            onClick={() => setExportOpen(!exportOpen)}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all"
+          >
+            <Download size={20} />
+          </button>
+        </Tooltip>
         {exportOpen && (
           <div className={`absolute top-full right-0 mt-2 w-48 rounded-xl border shadow-xl backdrop-blur-md ${
             isDarkMode ? "bg-zinc-900/95 border-zinc-700" : "bg-white/95 border-slate-200"
@@ -352,30 +375,31 @@ export function Toolbar() {
           </div>
         )}
       </div>
-      <button
-        onClick={toggleTheme}
-        className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        title="Toggle theme"
-      >
-        {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-      </button>
+      <Tooltip label="Toggle theme">
+        <button
+          onClick={toggleTheme}
+          className="p-3 rounded-xl hover:bg-white/10 transition-all"
+        >
+          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+      </Tooltip>
       <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
       {user && (
-        <button
-          onClick={() => setShareOpen(true)}
-          className="p-3 rounded-xl hover:bg-white/10 transition-all"
-          title="Share project"
-        >
-          <Share2 size={20} />
-        </button>
+        <Tooltip label="Share">
+          <button
+            onClick={() => setShareOpen(true)}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all"
+          >
+            <Share2 size={20} />
+          </button>
+        </Tooltip>
       )}
 
       {user ? (
         <button
           onClick={() => setProfileOpen(true)}
           className="p-3 rounded-xl hover:bg-white/10 transition-all"
-          title={user.email ?? "Profile"}
         >
           {user.user_metadata?.avatar_url ? (
             <img
@@ -392,38 +416,48 @@ export function Toolbar() {
         <button
           onClick={() => setAuthModalOpen(true)}
           className="p-3 rounded-xl hover:bg-white/10 transition-all text-blue-400"
-          title="Sign in"
         >
           <LogIn size={20} />
         </button>
       )}
 
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
-      {apiKeySettingsOpen && <ApiKeySettings open={apiKeySettingsOpen} onClose={() => setApiKeySettingsOpen(false)} />}
     </div>
 
-    {/* Profile dropdown — below toolbar, right-aligned */}
+    {/* Profile dropdown — below toolbar, centered */}
     {profileOpen && (
-      <div className="fixed inset-0 z-[60]" onClick={() => setProfileOpen(false)}>
+      <div className="fixed inset-0 z-[60]" onClick={() => { setProfileOpen(false); useUIStore.getState().setProfileTab("profile"); }}>
         <div
-          className="absolute top-[72px] right-4"
+          className="absolute top-[72px] left-1/2 -translate-x-1/2 max-w-[calc(100vw-2rem)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} inline />
+          <ProfileModal open={profileOpen} onClose={() => { setProfileOpen(false); useUIStore.getState().setProfileTab("profile"); }} inline />
         </div>
       </div>
     )}
 
-    {/* Share dropdown — below toolbar, right-aligned */}
+    {/* Share dropdown — below toolbar, centered */}
     {shareOpen && activeProjectId && (
       <div className="fixed inset-0 z-[60]" onClick={() => setShareOpen(false)}>
         <div
-          className="absolute top-[72px] right-4"
+          className="absolute top-[72px] left-1/2 -translate-x-1/2 max-w-[calc(100vw-2rem)]"
           onClick={(e) => e.stopPropagation()}
         >
           <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} projectId={activeProjectId} inline />
         </div>
       </div>
+    )}
+
+    {templatePickerOpen && (
+      <TemplatePicker
+        open={templatePickerOpen}
+        onClose={() => setTemplatePickerOpen(false)}
+        onInsert={(template) => {
+          setTemplatePickerOpen(false);
+          const { blocks, connections } = template.create();
+          useCanvasStore.getState().insertWorkflow(template.name, blocks, connections);
+        }}
+      />
     )}
     </>
   );

@@ -16,9 +16,10 @@ interface ArrowProps {
   loopConfig?: LoopConfig;
   fromStatus?: string;
   toStatus?: string;
+  isAiConnection?: boolean;
 }
 
-export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, connectionStyle = "arrow", loopConfig, fromStatus, toStatus }: ArrowProps) {
+export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, connectionStyle = "arrow", loopConfig, fromStatus, toStatus, isAiConnection }: ArrowProps) {
   const deleteConnection = useCanvasStore((s) => s.deleteConnection);
   const updateConnection = useCanvasStore((s) => s.updateConnection);
   const [hovered, setHovered] = useState(false);
@@ -75,13 +76,15 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
                 ? "#f97316"
                 : connectionStyle === "debate"
                   ? "#8b5cf6"
-                  : hovered
-                    ? (isDarkMode ? "#a1a1aa" : "#64748b")
-                    : stroke
+                  : isAiConnection && connectionStyle === "arrow"
+                    ? "#60a5fa"
+                    : hovered
+                      ? (isDarkMode ? "#a1a1aa" : "#64748b")
+                      : stroke
         }
-        strokeWidth={hovered ? 3 : 2}
+        strokeWidth={isAiConnection && connectionStyle === "arrow" ? 3 : hovered ? 3 : 2}
         fill="none"
-        markerEnd={connectionStyle === "blocker" ? "url(#blocker)" : (connectionStyle === "loop" || connectionStyle === "debate") ? "url(#loop-marker)" : "url(#arrowhead)"}
+        markerEnd={connectionStyle === "blocker" ? "url(#blocker)" : (connectionStyle === "loop" || connectionStyle === "debate") ? "url(#loop-marker)" : isAiConnection && connectionStyle === "arrow" ? "url(#arrowhead-ai)" : "url(#arrowhead)"}
         markerStart={connectionStyle === "bidirectional" || connectionStyle === "debate" ? "url(#arrowhead-start)" : undefined}
         strokeDasharray={
           fromStatus === "success" && toStatus === "running"

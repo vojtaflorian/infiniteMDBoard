@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { GripVertical, Trash2, Maximize2, Globe, Code2, Sparkles, Languages, Copy, Square, Circle, Diamond, ArrowRightLeft, Loader2, MessageSquare, Send, X, ChevronUp, ChevronDown, Play } from "lucide-react";
 import { isSpaceHeld } from "@/features/canvas/Canvas";
 import { useCanvasStore } from "@/stores/canvasStore";
+import { runPipeline } from "@/lib/execution/engine";
 import { createLogger } from "@/lib/logger";
 import { useUIStore } from "@/stores/uiStore";
 import { TextBlock } from "./TextBlock";
@@ -28,11 +29,19 @@ const stickyBgMap: Record<string, string> = {
 };
 
 const frameBorderMap: Record<string, { dark: string; light: string }> = {
-  yellow: { dark: "border-yellow-500/60", light: "border-yellow-400" },
-  pink:   { dark: "border-pink-500/60",   light: "border-pink-400" },
-  green:  { dark: "border-green-500/60",  light: "border-green-400" },
-  blue:   { dark: "border-blue-500/60",   light: "border-blue-400" },
-  purple: { dark: "border-purple-500/60", light: "border-purple-400" },
+  yellow: { dark: "border-yellow-500/80", light: "border-yellow-400" },
+  pink:   { dark: "border-pink-500/80",   light: "border-pink-400" },
+  green:  { dark: "border-green-500/80",  light: "border-green-400" },
+  blue:   { dark: "border-blue-500/80",   light: "border-blue-400" },
+  purple: { dark: "border-purple-500/80", light: "border-purple-400" },
+};
+
+const frameBgMap: Record<string, { dark: string; light: string }> = {
+  yellow: { dark: "bg-yellow-500/[0.06]", light: "bg-yellow-100/40" },
+  pink:   { dark: "bg-pink-500/[0.06]",   light: "bg-pink-100/40" },
+  green:  { dark: "bg-green-500/[0.06]",  light: "bg-green-100/40" },
+  blue:   { dark: "bg-blue-500/[0.06]",   light: "bg-blue-100/40" },
+  purple: { dark: "bg-purple-500/[0.06]", light: "bg-purple-100/40" },
 };
 
 const colorOptions = ["yellow", "pink", "green", "blue", "purple"] as const;
@@ -57,6 +66,8 @@ interface BlockRendererProps {
 
 export function BlockRenderer({ block }: BlockRendererProps) {
   const activeTool = useCanvasStore((s) => s.activeTool);
+  const blocks = useCanvasStore((s) => s.blocks);
+  const connections = useCanvasStore((s) => s.connections);
   const isSelected = useCanvasStore((s) => s.selectedBlockIds.includes(block.id));
   const toggleSelectBlock = useCanvasStore((s) => s.toggleSelectBlock);
   const editingBlockId = useCanvasStore((s) => s.editingBlockId);
@@ -68,7 +79,9 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const setDraggingBlock = useCanvasStore((s) => s.setDraggingBlock);
   const setResizingBlock = useCanvasStore((s) => s.setResizingBlock);
   const setConnectingFrom = useCanvasStore((s) => s.setConnectingFrom);
+  const setPendingConnection = useCanvasStore((s) => s.setPendingConnection);
   const addConnection = useCanvasStore((s) => s.addConnection);
+  const hasPendingConnection = useCanvasStore((s) => s.pendingConnection !== null);
   const setTool = useCanvasStore((s) => s.setTool);
   const updateBlock = useCanvasStore((s) => s.updateBlock);
   const isExpanded = useCanvasStore((s) => s.expandedBlockIds.includes(block.id));
@@ -80,6 +93,11 @@ export function BlockRenderer({ block }: BlockRendererProps) {
     block.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     block.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const isFlowStart = block.type === "ai-agent" && !connections.some((c) => {
+    if (c.toId !== block.id) return false;
+    const fromBlock = blocks.find((b) => b.id === c.fromId);
+    return fromBlock?.type.startsWith("ai-");
+  });
   const [aiLabel, setAiLabel] = useState<string | null>(null);
   const isFormatting = aiLabel !== null;
   const [showAiMenu, setShowAiMenu] = useState(false);
@@ -91,17 +109,20 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const handlePortPointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    portDragging.current = true;
-    setConnectingFrom(block.id);
-    setTool("connect");
+    // Calculate port world position (right edge center of block)
+    const portX = block.position.x + block.width;
+    const portY = block.position.y + (block.height > 0 ? block.height / 2 : 100);
+    setPendingConnection({ fromId: block.id, fromX: portX, fromY: portY, toX: portX, toY: portY });
+  }, [block.id, block.position.x, block.position.y, block.width, block.height, setPendingConnection]);
 
-    const onUp = (ev: PointerEvent) => {
-      portDragging.current = false;
-      document.removeEventListener("pointerup", onUp);
-      // Connection completes via existing connect-tool click on target block
-    };
-    document.addEventListener("pointerup", onUp);
-  }, [block.id, setConnectingFrom, setTool]);
+  const handleBlockPointerUp = useCallback((e: React.PointerEvent) => {
+    const pending = useCanvasStore.getState().pendingConnection;
+    if (pending && pending.fromId !== block.id) {
+      e.stopPropagation();
+      addConnection(pending.fromId, block.id);
+      useCanvasStore.getState().setPendingConnection(null);
+    }
+  }, [block.id, addConnection]);
 
   // Close AI menu on outside click
   useEffect(() => {
@@ -237,6 +258,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       onMouseDown={handleMouseDown}
       onMouseDownCapture={handleMouseDownCapture}
       onClickCapture={handleClickCapture}
+      onPointerUp={handleBlockPointerUp}
     >
       {/* Execution timing badge */}
       {block.type.startsWith("ai-") && (block.executionState === "running" || block.executionDurationMs != null) && (
@@ -268,6 +290,21 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           onChange={(e) => updateBlock(block.id, { title: e.target.value })}
           onMouseDown={(e) => e.stopPropagation()}
         />
+      )}
+
+      {/* Flow start badge */}
+      {!presentationMode && isFlowStart && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            runPipeline(block.id);
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-medium shadow-sm hover:bg-orange-600 transition-colors"
+          title="Run flow from here"
+        >
+          <Play size={10} fill="currentColor" /> Run
+        </button>
       )}
 
       {/* Drag grip */}
@@ -476,7 +513,10 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       <div
         className={`${shapeStyles.className} p-4 border transition-all ${
           block.type === "frame"
-            ? `${isDarkMode ? "bg-zinc-900/30" : "bg-slate-100/30"} border-dashed ${
+            ? `${block.color && frameBgMap[block.color]
+                ? isDarkMode ? frameBgMap[block.color].dark : frameBgMap[block.color].light
+                : isDarkMode ? "bg-zinc-900/30" : "bg-slate-100/30"
+              } border-dashed ${
                 block.color && frameBorderMap[block.color]
                   ? isDarkMode ? frameBorderMap[block.color].dark : frameBorderMap[block.color].light
                   : isDarkMode ? "border-zinc-700" : "border-slate-300"
@@ -578,15 +618,15 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         <>
           {/* Input port — left edge */}
           <div
-            className={`absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-10 ${
+            className={`absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-all cursor-crosshair z-10 ${
               isDarkMode ? "bg-zinc-800 border-green-500" : "bg-white border-green-500"
-            }`}
+            } ${hasPendingConnection ? "opacity-100 ring-2 ring-green-400 scale-125" : "opacity-40 group-hover:opacity-100"}`}
             title="Input"
           />
           {/* Output port — right edge */}
           <div
             onPointerDown={handlePortPointerDown}
-            className={`absolute top-1/2 -right-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-crosshair z-10 ${
+            className={`absolute top-1/2 -right-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 opacity-40 group-hover:opacity-100 transition-opacity cursor-crosshair z-10 ${
               isDarkMode ? "bg-zinc-800 border-blue-500" : "bg-white border-blue-500"
             }`}
             title="Drag to connect"

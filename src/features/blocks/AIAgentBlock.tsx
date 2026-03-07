@@ -6,6 +6,7 @@ import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { getBlockAlias } from "@/lib/execution/templateResolver";
 import { getApiKeys } from "@/lib/apiKeyStore";
+import { getDefaultAIConfig } from "@/lib/execution/aiDefaults";
 import { runSingleBlock, runPipeline } from "@/lib/execution/engine";
 import { TemplatePreviewOverlay } from "./TemplatePreviewOverlay";
 import type { AIConfig, AIProvider, Block } from "@/types";
@@ -65,6 +66,17 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
 
   const apiKeys = typeof window !== "undefined" ? getApiKeys() : [];
   const providerKeys = apiKeys.filter((k) => k.provider === config.provider);
+
+  // Auto-select API key and model when empty
+  useEffect(() => {
+    if (config.apiKeyId === "" && providerKeys.length > 0) {
+      const defaults = getDefaultAIConfig(config.provider);
+      updateConfig({
+        apiKeyId: defaults.apiKeyId,
+        ...(config.model === "" ? { model: defaults.model } : {}),
+      });
+    }
+  }, [config.provider]); // Only re-run when provider changes
 
   const toggleSection = (s: Section) => {
     setOpenSections((prev) => {
@@ -208,7 +220,8 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
         <div className="space-y-1.5 pl-3 pb-2">
           <select value={config.provider} onChange={(e) => {
             const p = e.target.value as AIProvider;
-            updateConfig({ provider: p, model: getLastModel(p) });
+            const defaults = getDefaultAIConfig(p);
+            updateConfig({ provider: p, model: defaults.model || getLastModel(p), apiKeyId: defaults.apiKeyId });
           }} className={inputClass}>
             <option value="openai">OpenAI</option>
             <option value="google">Google (Gemini)</option>
