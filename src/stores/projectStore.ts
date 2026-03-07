@@ -19,6 +19,7 @@ interface ProjectState {
   activeProjectId: string | null;
 
   createProject: (name: string) => string;
+  createProjectWithData: (name: string, data: Pick<Project, "blocks" | "connections">) => string;
   deleteProject: (id: string) => void;
   renameProject: (id: string, name: string) => void;
   duplicateProject: (id: string) => string | null;
@@ -56,6 +57,15 @@ export const useProjectStore = create<ProjectState>()(
       createProject: (name) => {
         const project = createEmptyProject(name);
         log.info("Created project", project.id, name);
+        set((s) => ({ projects: [...s.projects, project] }));
+        return project.id;
+      },
+
+      createProjectWithData: (name, data) => {
+        const project = createEmptyProject(name);
+        project.blocks = data.blocks;
+        project.connections = data.connections;
+        log.info("Created project from template", project.id, name);
         set((s) => ({ projects: [...s.projects, project] }));
         return project.id;
       },

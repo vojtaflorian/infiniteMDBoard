@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.3.0";
+export const APP_VERSION = "3.4.0";
 export const APP_NAME = "infiniteMDBoard";
 export const APP_ID = "infiniteMDBoard";
 
@@ -42,4 +42,6 @@ export const APP_FEATURES: { short: string; detail: string }[] = [
   { short: "Template references between blocks", detail: "{{alias.path}} references for data flow between AI blocks with autocomplete" },
   { short: "Loop & debate connections", detail: "Loop connections with max iterations and JSON path conditions for multi-agent debates" },
   { short: "Multi-provider AI support", detail: "OpenAI, Google Gemini, Anthropic, and any OpenAI-compatible API endpoint" },
+  { short: "Inline reference preview", detail: "Hover over {{...}} references in AI prompts to preview the source block content" },
+  { short: "Workflow templates", detail: "Starter templates (Summarizer, Translator, Critic & Refine, Chain) for quick AI workflow setup" },
 ];

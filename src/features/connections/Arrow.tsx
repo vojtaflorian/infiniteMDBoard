@@ -14,9 +14,11 @@ interface ArrowProps {
   isDarkMode: boolean;
   connectionStyle?: ConnectionStyle;
   loopConfig?: LoopConfig;
+  fromStatus?: string;
+  toStatus?: string;
 }
 
-export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, connectionStyle = "arrow", loopConfig }: ArrowProps) {
+export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, connectionStyle = "arrow", loopConfig, fromStatus, toStatus }: ArrowProps) {
   const deleteConnection = useCanvasStore((s) => s.deleteConnection);
   const updateConnection = useCanvasStore((s) => s.updateConnection);
   const [hovered, setHovered] = useState(false);
@@ -65,21 +67,34 @@ export function Arrow({ id, pathData, midpoint, label, stroke, isDarkMode, conne
       <path
         d={pathData}
         stroke={
-          connectionStyle === "blocker"
-            ? "#ef4444"
-            : connectionStyle === "loop"
-              ? "#f97316"
-              : connectionStyle === "debate"
-                ? "#8b5cf6"
-                : hovered
-                  ? (isDarkMode ? "#a1a1aa" : "#64748b")
-                  : stroke
+          fromStatus === "success" && toStatus === "success"
+            ? "#22c55e"
+            : connectionStyle === "blocker"
+              ? "#ef4444"
+              : connectionStyle === "loop"
+                ? "#f97316"
+                : connectionStyle === "debate"
+                  ? "#8b5cf6"
+                  : hovered
+                    ? (isDarkMode ? "#a1a1aa" : "#64748b")
+                    : stroke
         }
         strokeWidth={hovered ? 3 : 2}
         fill="none"
         markerEnd={connectionStyle === "blocker" ? "url(#blocker)" : (connectionStyle === "loop" || connectionStyle === "debate") ? "url(#loop-marker)" : "url(#arrowhead)"}
         markerStart={connectionStyle === "bidirectional" || connectionStyle === "debate" ? "url(#arrowhead-start)" : undefined}
-        strokeDasharray={connectionStyle === "loop" || connectionStyle === "debate" ? "6 3" : undefined}
+        strokeDasharray={
+          fromStatus === "success" && toStatus === "running"
+            ? "8 4"
+            : connectionStyle === "loop" || connectionStyle === "debate"
+              ? "6 3"
+              : undefined
+        }
+        style={
+          fromStatus === "success" && toStatus === "running"
+            ? { animation: "dash-flow 0.6s linear infinite" }
+            : undefined
+        }
       />
       {/* Label */}
       {(label || hovered) && (

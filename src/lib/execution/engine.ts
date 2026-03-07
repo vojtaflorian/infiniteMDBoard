@@ -234,6 +234,17 @@ export async function runPipeline(
   const totalMs = Date.now() - pipelineStart;
   log.info(`Pipeline completed in ${totalMs}ms`);
   onPipelineElapsed?.(totalMs);
+
+  // Reset success statuses after 3s so blocks return to clean state
+  setTimeout(() => {
+    const s = useCanvasStore.getState();
+    for (const bid of runnableOrder) {
+      const b = s.blocks.find((bl) => bl.id === bid);
+      if (b?.executionState === "success") {
+        s.setBlockExecution(bid, "idle");
+      }
+    }
+  }, 3000);
 }
 
 function getJsonPathValue(obj: unknown, path: string): unknown {

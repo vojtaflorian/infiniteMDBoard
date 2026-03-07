@@ -5,7 +5,7 @@ import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
 import { getArrowPath, getMidpoint } from "@/lib/geometry";
 import { Arrow } from "./Arrow";
-import type { ConnectionStyle, LoopConfig, Position } from "@/types";
+import type { Block, ConnectionStyle, LoopConfig, Position } from "@/types";
 
 const ARROW_COLOR_DARK = "#71717a";
 const ARROW_COLOR_LIGHT = "#94a3b8";
@@ -31,9 +31,11 @@ export function ConnectionLayer() {
           label: conn.label,
           connectionStyle: conn.style,
           loopConfig: conn.loopConfig,
+          fromStatus: from.executionState,
+          toStatus: to.executionState,
         };
       })
-      .filter(Boolean) as { id: string; path: string; midpoint: Position; label: string; connectionStyle?: ConnectionStyle; loopConfig?: LoopConfig }[];
+      .filter(Boolean) as { id: string; path: string; midpoint: Position; label: string; connectionStyle?: ConnectionStyle; loopConfig?: LoopConfig; fromStatus?: string; toStatus?: string }[];
   }, [blocks, connections]);
 
   return (
@@ -43,6 +45,7 @@ export function ConnectionLayer() {
       viewBox="-10000 -10000 20000 20000"
     >
       <defs>
+        <style>{`@keyframes dash-flow { to { stroke-dashoffset: -12; } }`}</style>
         <marker
           id="arrowhead"
           markerWidth="10"
@@ -96,6 +99,8 @@ export function ConnectionLayer() {
           isDarkMode={isDarkMode}
           connectionStyle={arrow.connectionStyle}
           loopConfig={arrow.loopConfig}
+          fromStatus={arrow.fromStatus}
+          toStatus={arrow.toStatus}
         />
       ))}
     </svg>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Upload, Download, LogIn, User, Cloud } from "lucide-react";
+import { Plus, Upload, Download, LogIn, User, Cloud, Workflow } from "lucide-react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -14,6 +14,8 @@ import { APP_VERSION, APP_NAME, APP_TAGLINE, APP_FEATURES } from "@/lib/config";
 import { AuthModal } from "@/features/auth/AuthModal";
 import { ProfileModal } from "@/features/auth/ProfileModal";
 import { ImportDialog } from "@/features/auth/ImportDialog";
+import { TemplatePicker } from "./TemplatePicker";
+import type { WorkflowTemplate } from "@/lib/execution/templates";
 
 const log = createLogger("ProjectList");
 
@@ -22,6 +24,7 @@ export function ProjectList() {
   const {
     projects,
     createProject,
+    createProjectWithData,
     deleteProject,
     duplicateProject,
     renameProject,
@@ -36,6 +39,7 @@ export function ProjectList() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [cloudSynced, setCloudSynced] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
 
   // Load cloud projects on login
   useEffect(() => {
@@ -59,6 +63,13 @@ export function ProjectList() {
     const name = window.prompt("Project name:", "Untitled Project");
     if (!name) return;
     const id = createProject(name.trim());
+    router.push(`/canvas/${id}`);
+  };
+
+  const handleTemplateSelect = (template: WorkflowTemplate) => {
+    const { blocks, connections } = template.create();
+    const id = createProjectWithData(template.name, { blocks, connections });
+    setTemplatePickerOpen(false);
     router.push(`/canvas/${id}`);
   };
 
@@ -187,6 +198,17 @@ export function ProjectList() {
             <Plus size={32} className="opacity-50" />
             <span className="text-sm opacity-60">New Project</span>
           </button>
+          <button
+            onClick={() => setTemplatePickerOpen(true)}
+            className={`rounded-xl border-2 border-dashed p-8 flex flex-col items-center justify-center gap-2 transition-all ${
+              isDarkMode
+                ? "border-purple-900/50 hover:border-purple-700 hover:bg-purple-950/30"
+                : "border-purple-200 hover:border-purple-400 hover:bg-purple-50"
+            }`}
+          >
+            <Workflow size={32} className="opacity-50" />
+            <span className="text-sm opacity-60">New AI Workflow</span>
+          </button>
           {projects.map((project) => (
             <ProjectCard
               key={project.id}
@@ -217,6 +239,7 @@ export function ProjectList() {
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
       <ImportDialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)} />
+      <TemplatePicker open={templatePickerOpen} onClose={() => setTemplatePickerOpen(false)} onSelect={handleTemplateSelect} />
     </div>
   );
 }
