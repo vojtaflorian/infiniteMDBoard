@@ -66,8 +66,6 @@ interface BlockRendererProps {
 
 export function BlockRenderer({ block }: BlockRendererProps) {
   const activeTool = useCanvasStore((s) => s.activeTool);
-  const blocks = useCanvasStore((s) => s.blocks);
-  const connections = useCanvasStore((s) => s.connections);
   const isSelected = useCanvasStore((s) => s.selectedBlockIds.includes(block.id));
   const toggleSelectBlock = useCanvasStore((s) => s.toggleSelectBlock);
   const editingBlockId = useCanvasStore((s) => s.editingBlockId);
@@ -93,11 +91,6 @@ export function BlockRenderer({ block }: BlockRendererProps) {
     block.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     block.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const isFlowStart = block.type === "ai-agent" && !connections.some((c) => {
-    if (c.toId !== block.id) return false;
-    const fromBlock = blocks.find((b) => b.id === c.fromId);
-    return fromBlock?.type.startsWith("ai-");
-  });
   const [aiLabel, setAiLabel] = useState<string | null>(null);
   const isFormatting = aiLabel !== null;
   const [showAiMenu, setShowAiMenu] = useState(false);
@@ -169,10 +162,13 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         toggleSelectBlock(block.id);
         return;
       }
-      if (isSpaceHeld() || block.type === "frame") {
-        // Spacebar held or frame block → drag instead of edit
+      // Determine if click landed on an editable element
+      const target = e.target as HTMLElement;
+      const isEditable = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable;
+      if (isSpaceHeld() || block.type === "frame" || !isEditable) {
+        // Spacebar / frame / click on non-editable area → drag
         setSelectedBlock(block.id);
-        setEditingBlock(null);
+        setEditingBlock(block.type !== "frame" ? block.id : null);
         setDraggingBlock(block.id);
       } else {
         setSelectedBlock(block.id);
@@ -292,8 +288,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         />
       )}
 
-      {/* Flow start badge */}
-      {!presentationMode && isFlowStart && (
+      {/* Run badge — all ai-agent blocks */}
+      {!presentationMode && block.type === "ai-agent" && (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -316,6 +312,18 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           }`}
         >
           <GripVertical size={16} />
+        </div>
+      )}
+
+      {/* Bottom drag grip */}
+      {!presentationMode && (
+        <div
+          onMouseDown={handleGripMouseDown}
+          className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover:opacity-100 transition-opacity cursor-grab ${
+            isDarkMode ? "text-zinc-600" : "text-slate-400"
+          }`}
+        >
+          <GripVertical size={16} className="rotate-90" />
         </div>
       )}
 
@@ -546,7 +554,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
           block.type === "ai-agent" ? "border-l-4 border-l-blue-500/70" :
           block.type === "ai-input" ? "border-l-4 border-l-green-500/70" :
           block.type === "ai-viewer" ? "border-l-4 border-l-purple-500/70" : ""
-        } ${isEditing ? "shadow-xl" : "shadow-lg"} ${!isClipped ? "backdrop-blur-sm" : ""}`}
+        } ${isEditing ? "shadow-xl" : "shadow-lg"} ${!isClipped ? "backdrop-blur-sm" : ""} ${block.height <= 0 ? "overflow-hidden" : ""}`}
         style={{
           ...(block.type !== "text" && block.height > 0
             ? { height: block.height, overflowY: "auto" as const }
@@ -618,6 +626,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         <>
           {/* Input port — left edge */}
           <div
+            onPointerUp={handleBlockPointerUp}
             className={`absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-all cursor-crosshair z-10 ${
               isDarkMode ? "bg-zinc-800 border-green-500" : "bg-white border-green-500"
             } ${hasPendingConnection ? "opacity-100 ring-2 ring-green-400 scale-125" : "opacity-40 group-hover:opacity-100"}`}
@@ -650,11 +659,11 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       {!presentationMode && <>
         <div
           onMouseDown={handleResizeMouseDown}
-          className={`absolute -top-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-2 ${
+          className={`absolute -top-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nesw-resize p-3 ${
             isDarkMode ? "text-zinc-600" : "text-slate-400"
           }`}
         >
-          <svg width="12" height="12" viewBox="0 0 10 10">
+          <svg width="12" height="12" viewBox="0 0 10 10" style={{ transform: "scaleX(-1)" }}>
             <path
               d="M9 1L1 9M9 5L5 9"
               stroke="currentColor"
@@ -665,7 +674,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         </div>
         <div
           onMouseDown={handleResizeMouseDown}
-          className={`absolute -bottom-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-2 ${
+          className={`absolute -bottom-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-3 ${
             isDarkMode ? "text-zinc-600" : "text-slate-400"
           }`}
         >

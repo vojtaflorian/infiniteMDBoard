@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, FileText, X } from "lucide-react";
 import { useCanvasStore } from "@/stores/canvasStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -31,6 +31,15 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [jsonValid, setJsonValid] = useState<boolean | null>(null);
   const [dragOver, setDragOver] = useState(false);
+
+  // Auto-rename title based on alias or file name
+  useEffect(() => {
+    if (block.alias) {
+      if (block.alias !== block.title) updateBlock(block.id, { title: block.alias });
+    } else if (config.fileName && config.fileName !== block.title) {
+      updateBlock(block.id, { title: config.fileName });
+    }
+  }, [block.alias, config.fileName]);
 
   const handleContentChange = (value: string) => {
     updateBlock(block.id, { content: value });

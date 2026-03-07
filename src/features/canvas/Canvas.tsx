@@ -202,6 +202,12 @@ export function Canvas() {
         return;
       }
 
+      // Cancel pending connection on empty canvas click
+      if (pendingConnection) {
+        setPendingConnection(null);
+        return;
+      }
+
       if (activeTool === "select" && e.shiftKey) {
         // Start marquee select
         const cam = useCanvasStore.getState().camera;
@@ -219,7 +225,7 @@ export function Canvas() {
         startPanning(e.clientX, e.clientY);
       }
     },
-    [activeTool, startPanning, clearSelection, setEditingBlock, setConnectingFrom],
+    [activeTool, pendingConnection, startPanning, clearSelection, setEditingBlock, setConnectingFrom, setPendingConnection],
   );
 
   const handleMouseMove = useCallback(
@@ -357,11 +363,6 @@ export function Canvas() {
       return;
     }
 
-    // Cancel pending connection if dropped on empty canvas
-    if (useCanvasStore.getState().pendingConnection) {
-      setPendingConnection(null);
-    }
-
     // Finalize drag/resize: resume tracking + push single undo entry
     if (preMoveStateRef.current) {
       const temporal = useCanvasStore.temporal;
@@ -383,7 +384,7 @@ export function Canvas() {
     resizeStartRef.current = null;
     blockStartSizeRef.current = null;
     childStartPositionsRef.current = null;
-  }, [stopPanning, setDraggingBlock, setResizingBlock, setPendingConnection, marqueeRect, clearSelection, toggleSelectBlock]);
+  }, [stopPanning, setDraggingBlock, setResizingBlock, marqueeRect, clearSelection, toggleSelectBlock]);
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {

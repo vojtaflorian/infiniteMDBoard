@@ -78,6 +78,13 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
     }
   }, [config.provider]); // Only re-run when provider changes
 
+  // Auto-rename title based on alias
+  useEffect(() => {
+    if (block.alias && block.alias !== block.title) {
+      updateBlock(block.id, { title: block.alias });
+    }
+  }, [block.alias]);
+
   const toggleSection = (s: Section) => {
     setOpenSections((prev) => {
       const next = new Set(prev);

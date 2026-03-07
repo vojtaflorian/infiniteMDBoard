@@ -44,7 +44,7 @@ export function ConnectionLayer() {
   return (
     <svg
       className="absolute pointer-events-none"
-      style={{ left: "-10000px", top: "-10000px", width: "20000px", height: "20000px" }}
+      style={{ left: "-10000px", top: "-10000px", width: "20000px", height: "20000px", zIndex: 1 }}
       viewBox="-10000 -10000 20000 20000"
     >
       <defs>
