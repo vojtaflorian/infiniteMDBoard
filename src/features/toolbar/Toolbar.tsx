@@ -25,6 +25,7 @@ import {
   FileInput,
   Eye,
   LayoutTemplate,
+  MoreHorizontal,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -68,6 +69,7 @@ export function Toolbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const apiKeySettingsOpen = useUIStore((s) => s.apiKeySettingsOpen);
   const setApiKeySettingsOpen = useUIStore((s) => s.setApiKeySettingsOpen);
 
@@ -91,6 +93,19 @@ export function Toolbar() {
     setTimeout(() => document.addEventListener("click", close), 0);
     return () => document.removeEventListener("click", close);
   }, [exportOpen]);
+
+  // Close "More" dropdown on outside click
+  useEffect(() => {
+    if (!moreOpen) return;
+    const close = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-more-dropdown]")) {
+        setMoreOpen(false);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", close), 0);
+    return () => document.removeEventListener("click", close);
+  }, [moreOpen]);
 
   const handleAddBlock = (type: BlockType) => {
     const cam = useCanvasStore.getState().camera;
@@ -116,6 +131,7 @@ export function Toolbar() {
     const project = getProject(activeProjectId);
     if (!project) return;
     downloadJson(JSON.stringify(project, null, 2), `${project.name}.json`);
+    useUIStore.getState().addToast("JSON exported");
   };
 
   const handleExportPng = async () => {
@@ -127,8 +143,10 @@ export function Toolbar() {
     const name = projectName || "board";
     try {
       await exportCanvasAsPng(canvasEl, `${name}.png`, useCanvasStore.getState().setCamera, camera, bbox);
+      useUIStore.getState().addToast("PNG exported");
     } catch (err) {
       log.error("PNG export failed", err);
+      useUIStore.getState().addToast("Export failed", "error");
     }
   };
 
@@ -141,8 +159,10 @@ export function Toolbar() {
     const name = projectName || "board";
     try {
       await exportCanvasAsPdf(canvasEl, `${name}.pdf`, useCanvasStore.getState().setCamera, camera, bbox);
+      useUIStore.getState().addToast("PDF exported");
     } catch (err) {
       log.error("PDF export failed", err);
+      useUIStore.getState().addToast("Export failed", "error");
     }
   };
 
@@ -154,6 +174,7 @@ export function Toolbar() {
       const project = importProjectFromJson(text);
       if (project) {
         useCanvasStore.getState().loadProject(project);
+        useUIStore.getState().addToast("Project imported");
       }
     });
     e.target.value = "";
@@ -222,7 +243,7 @@ export function Toolbar() {
       </div>
     )}
 
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 p-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl max-w-[calc(100vw-2rem)]">
       <Tooltip label="Back to projects">
         <button
           onClick={handleBack}
@@ -276,56 +297,96 @@ export function Toolbar() {
           <Frame size={20} />
         </button>
       </Tooltip>
-      <div className="w-px h-8 bg-white/10 mx-1 self-center" />
-      <Tooltip label="AI Agent">
-        <button
-          onClick={() => handleAddBlock("ai-agent")}
-          className="p-3 rounded-xl hover:bg-white/10 transition-all text-blue-400"
-        >
-          <Bot size={20} />
-        </button>
-      </Tooltip>
-      <Tooltip label="Input">
-        <button
-          onClick={() => handleAddBlock("ai-input")}
-          className="p-3 rounded-xl hover:bg-white/10 transition-all text-green-400"
-        >
-          <FileInput size={20} />
-        </button>
-      </Tooltip>
-      <Tooltip label="Viewer">
-        <button
-          onClick={() => handleAddBlock("ai-viewer")}
-          className="p-3 rounded-xl hover:bg-white/10 transition-all text-purple-400"
-        >
-          <Eye size={20} />
-        </button>
-      </Tooltip>
-      <Tooltip label="Add workflow">
-        <button
-          onClick={() => setTemplatePickerOpen(true)}
-          className="p-3 rounded-xl hover:bg-white/10 transition-all text-cyan-400"
-        >
-          <LayoutTemplate size={20} />
-        </button>
-      </Tooltip>
-      {toolButton(
-        "connect",
-        <ArrowRight size={20} />,
-        "Connect blocks",
-        "bg-purple-600",
-      )}
-      <div className="w-px h-8 bg-white/10 mx-1 self-center" />
+      <div className="hidden lg:flex items-center gap-2">
+        <div className="w-px h-8 bg-white/10 mx-1 self-center" />
+        <Tooltip label="AI Agent">
+          <button
+            onClick={() => handleAddBlock("ai-agent")}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all text-blue-400"
+          >
+            <Bot size={20} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Input">
+          <button
+            onClick={() => handleAddBlock("ai-input")}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all text-green-400"
+          >
+            <FileInput size={20} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Viewer">
+          <button
+            onClick={() => handleAddBlock("ai-viewer")}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all text-purple-400"
+          >
+            <Eye size={20} />
+          </button>
+        </Tooltip>
+        <Tooltip label="Add workflow">
+          <button
+            onClick={() => setTemplatePickerOpen(true)}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all text-cyan-400"
+          >
+            <LayoutTemplate size={20} />
+          </button>
+        </Tooltip>
+        {toolButton(
+          "connect",
+          <ArrowRight size={20} />,
+          "Connect blocks",
+          "bg-purple-600",
+        )}
+        <div className="w-px h-8 bg-white/10 mx-1 self-center" />
 
-      <Tooltip label="Search · ⌘F">
-        <button
-          onClick={() => setSearchOpen(true)}
-          className="p-3 rounded-xl hover:bg-white/10 transition-all"
-        >
-          <Search size={20} />
-        </button>
-      </Tooltip>
-      <div className="w-px h-8 bg-white/10 mx-1 self-center" />
+        <Tooltip label="Search · ⌘F">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all"
+          >
+            <Search size={20} />
+          </button>
+        </Tooltip>
+        <div className="w-px h-8 bg-white/10 mx-1 self-center" />
+      </div>
+
+      {/* More button — visible only on small screens */}
+      <div className="relative lg:hidden" data-more-dropdown onClick={(e) => e.stopPropagation()}>
+        <Tooltip label="More tools">
+          <button
+            onClick={() => setMoreOpen(!moreOpen)}
+            className="p-3 rounded-xl hover:bg-white/10 transition-all"
+          >
+            <MoreHorizontal size={20} />
+          </button>
+        </Tooltip>
+        {moreOpen && (
+          <div className={`absolute top-full right-0 mt-2 w-48 rounded-xl border shadow-xl backdrop-blur-md ${
+            isDarkMode ? "bg-zinc-900/95 border-zinc-700" : "bg-white/95 border-slate-200"
+          }`}>
+            <button onClick={() => { handleAddBlock("ai-agent"); setMoreOpen(false); }} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-blue-400 rounded-t-xl ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <Bot size={14} /> AI Agent
+            </button>
+            <button onClick={() => { handleAddBlock("ai-input"); setMoreOpen(false); }} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-green-400 ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <FileInput size={14} /> Input
+            </button>
+            <button onClick={() => { handleAddBlock("ai-viewer"); setMoreOpen(false); }} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-purple-400 ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <Eye size={14} /> Viewer
+            </button>
+            <button onClick={() => { setTemplatePickerOpen(true); setMoreOpen(false); }} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 text-cyan-400 ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <LayoutTemplate size={14} /> Workflow
+            </button>
+            <div className={`border-t ${isDarkMode ? "border-zinc-700" : "border-slate-200"}`} />
+            <button onClick={() => { setTool(activeTool === "connect" ? "select" : "connect"); setMoreOpen(false); }} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <ArrowRight size={14} /> Connect
+            </button>
+            <button onClick={() => { setSearchOpen(true); setMoreOpen(false); }} className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 rounded-b-xl ${isDarkMode ? "hover:bg-zinc-800" : "hover:bg-slate-100"}`}>
+              <Search size={14} /> Search
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="w-px h-8 bg-white/10 mx-1 self-center lg:hidden" />
 
       <Tooltip label="Undo · ⌘Z">
         <button

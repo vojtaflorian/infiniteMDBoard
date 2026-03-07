@@ -16,6 +16,7 @@ import { Toolbar } from "@/features/toolbar/Toolbar";
 import { ZoomControls } from "./ZoomControls";
 import { Minimap } from "./Minimap";
 import { SearchOverlay } from "./SearchOverlay";
+import { CanvasEmptyState } from "./CanvasEmptyState";
 import { useCamera } from "./hooks/useCamera";
 import { useDragDrop } from "./hooks/useDragDrop";
 import { APP_VERSION, ZOOM_MIN, ZOOM_MAX, ZOOM_WHEEL_FACTOR, ZOOM_DBLCLICK_FACTOR, GRID_SIZE } from "@/lib/config";
@@ -472,6 +473,7 @@ export function Canvas() {
       </div>
 
       {/* UI overlays */}
+      {!presentationMode && blocks.length === 0 && <CanvasEmptyState />}
       {!presentationMode && <Toolbar />}
       <ZoomControls />
       <Minimap />

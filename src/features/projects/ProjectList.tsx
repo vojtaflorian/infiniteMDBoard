@@ -40,6 +40,8 @@ export function ProjectList() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [cloudSynced, setCloudSynced] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("Untitled Project");
 
   // Load cloud projects on login
   useEffect(() => {
@@ -60,10 +62,21 @@ export function ProjectList() {
   }, [user, initialized, cloudSynced, mergeCloudProjects]);
 
   const handleNewProject = () => {
-    const name = window.prompt("Project name:", "Untitled Project");
-    if (!name) return;
-    const id = createProject(name.trim());
-    router.push(`/canvas/${id}`);
+    setNewProjectName("Untitled Project");
+    setIsCreatingProject(true);
+  };
+
+  const handleCreateConfirm = () => {
+    const trimmed = newProjectName.trim();
+    if (trimmed) {
+      const id = createProject(trimmed);
+      router.push(`/canvas/${id}`);
+    }
+    setIsCreatingProject(false);
+  };
+
+  const handleCreateCancel = () => {
+    setIsCreatingProject(false);
   };
 
   const handleTemplateSelect = (template: WorkflowTemplate) => {
@@ -187,17 +200,42 @@ export function ProjectList() {
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <button
-            onClick={handleNewProject}
-            className={`rounded-xl border-2 border-dashed p-8 flex flex-col items-center justify-center gap-2 transition-all ${
-              isDarkMode
-                ? "border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900/50"
-                : "border-slate-300 hover:border-slate-400 hover:bg-slate-100"
-            }`}
-          >
-            <Plus size={32} className="opacity-50" />
-            <span className="text-sm opacity-60">New Project</span>
-          </button>
+          {isCreatingProject ? (
+            <div
+              className={`rounded-xl border-2 border-dashed p-8 flex flex-col items-center justify-center gap-2 ${
+                isDarkMode
+                  ? "border-zinc-600 bg-zinc-900/50"
+                  : "border-slate-400 bg-slate-100"
+              }`}
+            >
+              <Plus size={32} className="opacity-50" />
+              <input
+                autoFocus
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateConfirm();
+                  if (e.key === "Escape") handleCreateCancel();
+                }}
+                onBlur={handleCreateConfirm}
+                className={`text-sm text-center bg-transparent outline-none border-b-2 w-full max-w-[180px] ${
+                  isDarkMode ? "border-zinc-600 text-white" : "border-slate-400 text-slate-900"
+                }`}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={handleNewProject}
+              className={`rounded-xl border-2 border-dashed p-8 flex flex-col items-center justify-center gap-2 transition-all ${
+                isDarkMode
+                  ? "border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900/50"
+                  : "border-slate-300 hover:border-slate-400 hover:bg-slate-100"
+              }`}
+            >
+              <Plus size={32} className="opacity-50" />
+              <span className="text-sm opacity-60">New Project</span>
+            </button>
+          )}
           <button
             onClick={() => setTemplatePickerOpen(true)}
             className={`rounded-xl border-2 border-dashed p-8 flex flex-col items-center justify-center gap-2 transition-all ${

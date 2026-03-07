@@ -133,7 +133,7 @@ export function Minimap() {
       width={MAP_W}
       height={MAP_H}
       onClick={handleClick}
-      className={`absolute bottom-4 right-16 z-50 rounded-lg border cursor-crosshair ${
+      className={`absolute bottom-52 right-4 z-50 rounded-lg border cursor-crosshair ${
         isDarkMode ? "border-zinc-700" : "border-slate-300"
       }`}
     />

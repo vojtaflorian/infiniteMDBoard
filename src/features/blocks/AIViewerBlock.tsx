@@ -203,7 +203,7 @@ export function AIViewerBlock({ block, isEditing, isExpanded }: AIViewerBlockPro
                 key={mode}
                 onClick={(e) => { e.stopPropagation(); updateBlock(block.id, { viewerConfig: { ...config, renderMode: mode } }); }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
                   config.renderMode === mode
                     ? isDarkMode ? "bg-purple-800 text-purple-200" : "bg-purple-200 text-purple-800"
                     : isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
@@ -221,7 +221,7 @@ export function AIViewerBlock({ block, isEditing, isExpanded }: AIViewerBlockPro
           }`}>
             {config.renderMode.toUpperCase()}
           </span>
-          <span className={`text-[11px] font-mono ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
+          <span className={`text-xs font-mono ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
             {config.sourceRef || "no source"}
           </span>
           {sourceContent && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 ml-auto" />}

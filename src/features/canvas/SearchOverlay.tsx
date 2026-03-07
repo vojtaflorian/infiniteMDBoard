@@ -24,14 +24,15 @@ export function SearchOverlay({ onClose }: SearchOverlayProps) {
     return () => setSearchQuery("");
   }, [query, setSearchQuery]);
 
-  const results = query.length >= 2
+  const allResults = query.length >= 2
     ? blocks.filter(
         (b) =>
           b.type !== "frame" &&
           (b.title.toLowerCase().includes(query.toLowerCase()) ||
            b.content.toLowerCase().includes(query.toLowerCase())),
-      ).slice(0, 8)
+      )
     : [];
+  const results = allResults.slice(0, 12);
 
   const jumpToBlock = useCallback((blockId: string) => {
     const block = blocks.find((b) => b.id === blockId);
@@ -99,6 +100,13 @@ export function SearchOverlay({ onClose }: SearchOverlayProps) {
                 </span>
               </button>
             ))}
+          </div>
+        )}
+        {results.length > 0 && allResults.length > results.length && (
+          <div className={`px-3 py-1.5 text-xs text-center border-t ${
+            isDarkMode ? "text-zinc-500 border-zinc-700" : "text-slate-400 border-slate-200"
+          }`}>
+            Showing {results.length} of {allResults.length} results
           </div>
         )}
         {query.length >= 2 && results.length === 0 && (

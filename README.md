@@ -15,11 +15,14 @@ Infinite canvas markdown board — create, organize, and connect markdown notes 
 - **AI format, translate & custom prompts** — per-block AI actions via Gemini (bring your own API key)
 - **Block search** (Cmd+F) — live filtering with jump-to-block
 - **Minimap** — overview panel with click-to-navigate
+- **Responsive toolbar** — adapts to screen size with overflow "More" menu
+- **Toast notifications** — feedback on export, import, copy, and delete actions
+- **Canvas empty state** — onboarding hints for new projects
 - **Export** to JSON / PNG / PDF
 - **Undo/Redo** (Ctrl+Z / Ctrl+Shift+Z)
 - **Multi-select** — Shift+click, Delete to remove, Ctrl+D to duplicate
 - **Presentation mode** — fullscreen with hidden UI, Esc to exit
-- **Dark/Light theme**
+- **Dark/Light theme** with system preference detection
 - **User accounts** — sign in with Google OAuth or magic link (email)
 - **Cloud storage** — auto-sync projects to Supabase with localStorage as instant cache
 - **Project sharing** — share via link, recipients get their own independent copy

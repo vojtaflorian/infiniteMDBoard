@@ -247,6 +247,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     deleteBlock(block.id);
+    useUIStore.getState().addToast("Block deleted — ⌘Z to undo");
   };
 
   return (
@@ -315,7 +316,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       {!presentationMode && (
         <div
           onMouseDown={handleGripMouseDown}
-          className={`absolute top-1/2 -left-5 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab ${
+          className={`absolute top-1/2 -left-5 -translate-y-1/2 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity cursor-grab ${
             isDarkMode ? "text-zinc-600" : "text-slate-400"
           }`}
         >
@@ -327,7 +328,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       {!presentationMode && (
         <div
           onMouseDown={handleGripMouseDown}
-          className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full opacity-0 group-hover:opacity-100 transition-opacity cursor-grab ${
+          className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity cursor-grab ${
             isDarkMode ? "text-zinc-600" : "text-slate-400"
           }`}
         >
@@ -336,7 +337,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       )}
 
       {/* Editing actions — top-left (hidden in presentation mode) */}
-      {!presentationMode && <div className="absolute -top-3 -left-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {!presentationMode && <div className={`absolute -top-3 -left-3 z-10 flex gap-1 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`}>
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -477,7 +478,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       </div>}
 
       {/* Styling — bottom-left (hidden in presentation mode) */}
-      {!presentationMode && <div className="absolute -bottom-3 -left-3 z-10 flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+      {!presentationMode && <div className={`absolute -bottom-3 -left-3 z-10 flex gap-1 items-center ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"} transition-opacity`}>
         {/* Shape picker (all blocks except frame) */}
         {block.type !== "frame" && !block.type.startsWith("ai-") && (
           <>
@@ -611,7 +612,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         <button
           onClick={(e) => { e.stopPropagation(); toggleBlockExpanded(block.id); }}
           onMouseDown={(e) => e.stopPropagation()}
-          className={`absolute -top-3 -right-3 z-10 p-1 rounded-full shadow-sm border transition-opacity opacity-0 group-hover:opacity-100 ${
+          className={`absolute -top-3 -right-3 z-10 p-1 rounded-full shadow-sm border transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"} ${
             isDarkMode
               ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-blue-400"
               : "bg-white border-slate-200 text-slate-500 hover:text-blue-500"
@@ -638,7 +639,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             onPointerUp={handleBlockPointerUp}
             className={`absolute top-1/2 -translate-y-1/2 -left-3 w-6 h-6 rounded-full border-2 transition-all cursor-crosshair z-10 ${
               isDarkMode ? "bg-zinc-800 border-green-500" : "bg-white border-green-500"
-            } ${hasPendingConnection ? "opacity-100 ring-2 ring-green-400 scale-125" : "opacity-0 group-hover:opacity-100"}`}
+            } ${hasPendingConnection ? "opacity-100 ring-2 ring-green-400 scale-125" : isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             title="Drag to connect"
           />
           {/* Output port — right edge */}
@@ -647,7 +648,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             onPointerUp={handleBlockPointerUp}
             className={`absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-6 rounded-full border-2 transition-all cursor-crosshair z-10 ${
               isDarkMode ? "bg-zinc-800 border-blue-500" : "bg-white border-blue-500"
-            } ${hasPendingConnection ? "opacity-100 ring-2 ring-blue-400 scale-125" : "opacity-0 group-hover:opacity-100"}`}
+            } ${hasPendingConnection ? "opacity-100 ring-2 ring-blue-400 scale-125" : isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
             title="Drag to connect"
           />
         </>
@@ -669,7 +670,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       {!presentationMode && <>
         <div
           onMouseDown={handleResizeMouseDown}
-          className={`absolute -top-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nesw-resize p-3 ${
+          className={`absolute -top-1 -right-1 ${isSelected ? "opacity-50" : "opacity-0 group-hover:opacity-50"} transition-opacity cursor-nesw-resize p-3 ${
             isDarkMode ? "text-zinc-600" : "text-slate-400"
           }`}
         >
@@ -684,7 +685,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         </div>
         <div
           onMouseDown={handleResizeMouseDown}
-          className={`absolute -bottom-1 -right-1 opacity-0 group-hover:opacity-50 transition-opacity cursor-nwse-resize p-3 ${
+          className={`absolute -bottom-1 -right-1 ${isSelected ? "opacity-50" : "opacity-0 group-hover:opacity-50"} transition-opacity cursor-nwse-resize p-3 ${
             isDarkMode ? "text-zinc-600" : "text-slate-400"
           }`}
         >

@@ -165,12 +165,12 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
         <div className="flex items-center gap-2 min-h-[24px]">
           <span className={`w-2 h-2 rounded-full shrink-0 ${PROVIDER_COLORS[config.provider] ?? "bg-zinc-500"}`} title={config.provider} />
           {config.model && (
-            <span className={`text-[11px] font-medium shrink-0 ${isDarkMode ? "text-zinc-300" : "text-slate-600"}`}>
+            <span className={`text-xs font-medium shrink-0 ${isDarkMode ? "text-zinc-300" : "text-slate-600"}`}>
               {config.model}
             </span>
           )}
           {promptPreview && (
-            <span className={`text-[11px] truncate ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+            <span className={`text-xs truncate ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
               {promptPreview}
             </span>
           )}
@@ -185,7 +185,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
           </span>
         </div>
         {block.executionOutput && (
-          <div className={`text-[10px] ${isDarkMode ? "text-zinc-600" : "text-slate-400"}`}>
+          <div className={`text-xs ${isDarkMode ? "text-zinc-600" : "text-slate-400"}`}>
             {(block.executionOutput.length / 1000).toFixed(1)}k chars
             {block.executionTokens && ` · ${block.executionTokens.input + block.executionTokens.output} tok`}
           </div>
@@ -201,7 +201,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
       <div className="flex items-center gap-2 mb-2">
         <button
           onClick={copyAlias}
-          className={`text-[10px] font-mono px-1.5 py-0.5 rounded cursor-copy transition-colors ${
+          className={`text-xs font-mono px-1.5 py-0.5 rounded cursor-copy transition-colors ${
             copied
               ? "bg-green-600/30 text-green-400"
               : isDarkMode ? "bg-blue-900/50 text-blue-400 hover:bg-blue-900/70" : "bg-blue-100 text-blue-700 hover:bg-blue-200"
@@ -214,7 +214,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
           value={block.alias ?? ""}
           onChange={(e) => updateBlock(block.id, { alias: e.target.value || undefined })}
           placeholder="custom alias"
-          className={`flex-1 text-[10px] font-mono px-2 py-0.5 rounded border outline-none ${
+          className={`flex-1 text-xs font-mono px-2 py-0.5 rounded border outline-none ${
             isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-400" : "bg-slate-50 border-slate-200 text-slate-500"
           }`}
         />
@@ -255,7 +255,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
           {providerKeys.length === 0 && (
             <button
               onClick={() => useUIStore.getState().setApiKeySettingsOpen(true)}
-              className={`text-[10px] text-left underline ${isDarkMode ? "text-yellow-500 hover:text-yellow-400" : "text-yellow-600 hover:text-yellow-500"}`}
+              className={`text-xs text-left underline ${isDarkMode ? "text-yellow-500 hover:text-yellow-400" : "text-yellow-600 hover:text-yellow-500"}`}
             >
               No API keys for {config.provider}. Click to add one.
             </button>
@@ -297,7 +297,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
           <div className="flex items-center gap-2">
             <label className={`text-[10px] w-20 shrink-0 ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>Temperature</label>
             <input type="range" min="0" max={TEMP_MAX[config.provider]} step="0.1" value={Math.min(config.temperature, TEMP_MAX[config.provider])} onChange={(e) => updateConfig({ temperature: parseFloat(e.target.value) })} className="flex-1" />
-            <span className={`text-[10px] w-8 text-right ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>{config.temperature}</span>
+            <span className={`text-xs w-8 text-right ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>{config.temperature}</span>
           </div>
           <div className="flex items-center gap-2">
             <label className={`text-[10px] w-20 shrink-0 ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>Max tokens</label>
@@ -323,7 +323,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
               <button
                 key={f}
                 onClick={() => updateConfig({ responseFormat: f })}
-                className={`text-[10px] px-2 py-0.5 rounded ${
+                className={`text-xs px-2 py-0.5 rounded ${
                   config.responseFormat === f
                     ? isDarkMode ? "bg-blue-800 text-blue-200" : "bg-blue-200 text-blue-800"
                     : isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
@@ -374,7 +374,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
                       updateConfig({ jsonSchema: data.schema });
                     }
                   }}
-                  className={`text-[10px] px-2 py-0.5 rounded ${
+                  className={`text-xs px-2 py-0.5 rounded ${
                     isDarkMode ? "bg-purple-800 text-purple-200 hover:bg-purple-700" : "bg-purple-100 text-purple-700 hover:bg-purple-200"
                   }`}
                 >
@@ -394,7 +394,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
                       updateConfig({ jsonSchema: data.schema });
                     }
                   }}
-                  className={`text-[10px] px-2 py-0.5 rounded ${
+                  className={`text-xs px-2 py-0.5 rounded ${
                     isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
@@ -456,7 +456,7 @@ export function AIAgentBlock({ block, isEditing, isExpanded }: AIAgentBlockProps
             </p>
           )}
           {block.executionTokens && (
-            <div className={`mt-1 text-[10px] font-mono ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+            <div className={`mt-1 text-xs font-mono ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
               ↑{block.executionTokens.input} ↓{block.executionTokens.output} tokens ({block.executionTokens.input + block.executionTokens.output} total)
             </div>
           )}

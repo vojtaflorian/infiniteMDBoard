@@ -37,17 +37,17 @@ type FormatAction =
   | { type: "line"; prefix: string };
 
 const formats: { icon: React.ReactNode; title: string; action: FormatAction }[] = [
-  { icon: <Bold size={14} />, title: "Bold", action: { type: "wrap", before: "**", after: "**" } },
-  { icon: <Italic size={14} />, title: "Italic", action: { type: "wrap", before: "_", after: "_" } },
-  { icon: <Code size={14} />, title: "Inline code", action: { type: "wrap", before: "`", after: "`" } },
-  { icon: <Heading1 size={14} />, title: "Heading 1", action: { type: "line", prefix: "# " } },
-  { icon: <Heading2 size={14} />, title: "Heading 2", action: { type: "line", prefix: "## " } },
-  { icon: <Quote size={14} />, title: "Quote", action: { type: "line", prefix: "> " } },
-  { icon: <List size={14} />, title: "Bullet list", action: { type: "line", prefix: "- " } },
-  { icon: <ListOrdered size={14} />, title: "Numbered list", action: { type: "line", prefix: "1. " } },
-  { icon: <CheckSquare size={14} />, title: "Checkbox", action: { type: "line", prefix: "- [ ] " } },
-  { icon: <LinkIcon size={14} />, title: "Link", action: { type: "wrap", before: "[", after: "](url)" } },
-  { icon: <Minus size={14} />, title: "Divider", action: { type: "line", prefix: "---" } },
+  { icon: <Bold size={16} />, title: "Bold", action: { type: "wrap", before: "**", after: "**" } },
+  { icon: <Italic size={16} />, title: "Italic", action: { type: "wrap", before: "_", after: "_" } },
+  { icon: <Code size={16} />, title: "Inline code", action: { type: "wrap", before: "`", after: "`" } },
+  { icon: <Heading1 size={16} />, title: "Heading 1", action: { type: "line", prefix: "# " } },
+  { icon: <Heading2 size={16} />, title: "Heading 2", action: { type: "line", prefix: "## " } },
+  { icon: <Quote size={16} />, title: "Quote", action: { type: "line", prefix: "> " } },
+  { icon: <List size={16} />, title: "Bullet list", action: { type: "line", prefix: "- " } },
+  { icon: <ListOrdered size={16} />, title: "Numbered list", action: { type: "line", prefix: "1. " } },
+  { icon: <CheckSquare size={16} />, title: "Checkbox", action: { type: "line", prefix: "- [ ] " } },
+  { icon: <LinkIcon size={16} />, title: "Link", action: { type: "wrap", before: "[", after: "](url)" } },
+  { icon: <Minus size={16} />, title: "Divider", action: { type: "line", prefix: "---" } },
 ];
 
 /**
@@ -241,7 +241,7 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
   if (isEditing) {
     return (
       <div className="flex flex-col gap-1 h-full">
-        <div className="flex flex-wrap gap-0.5 -mx-1">
+        <div className="flex flex-wrap gap-1 -mx-1">
           {formats.map((f) => (
             <button
               key={f.title}
@@ -250,7 +250,7 @@ export function TextBlock({ block, isEditing }: TextBlockProps) {
                 applyFormat(f.action);
               }}
               onMouseDown={(e) => e.preventDefault()}
-              className={`p-1 rounded transition-colors ${
+              className={`p-1.5 rounded transition-colors ${
                 isDarkMode
                   ? "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
                   : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"

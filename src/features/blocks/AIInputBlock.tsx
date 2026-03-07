@@ -128,7 +128,7 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
       {/* Header */}
       {showExpanded && (
         <div className="flex items-center justify-between">
-          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+          <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
             isDarkMode ? "bg-green-900/50 text-green-400" : "bg-green-100 text-green-700"
           }`}>
             {`{{${alias}}}`}
@@ -139,7 +139,7 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
                 key={f}
                 onClick={(e) => { e.stopPropagation(); handleFormatToggle(f); }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
+                className={`text-xs px-2 py-0.5 rounded transition-colors ${
                   config.format === f
                     ? isDarkMode ? "bg-green-800 text-green-200" : "bg-green-200 text-green-800"
                     : isDarkMode ? "text-zinc-500 hover:text-zinc-300" : "text-slate-400 hover:text-slate-600"
@@ -159,7 +159,7 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
             <FileText size={14} className={isDarkMode ? "text-zinc-400" : "text-slate-500"} />
             <div className="flex-1 min-w-0">
               <div className={`text-xs font-medium truncate ${isDarkMode ? "text-zinc-300" : "text-slate-700"}`}>{config.fileName}</div>
-              <div className={`text-[10px] ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
+              <div className={`text-xs ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
                 {config.fileType} · {formatFileSize(config.fileSize ?? 0)}
                 {config.fileType?.startsWith("image/") && " · image data URL"}
               </div>
@@ -189,7 +189,7 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
             <span className={`text-xs ${isDarkMode ? "text-zinc-500" : "text-slate-400"}`}>
               Drop file or click to upload
             </span>
-            <span className={`text-[10px] ${isDarkMode ? "text-zinc-600" : "text-slate-400"}`}>
+            <span className={`text-xs ${isDarkMode ? "text-zinc-600" : "text-slate-400"}`}>
               Images, text, PDF, CSV...
             </span>
             <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect}
@@ -226,7 +226,7 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
           }`}>
             {config.format.toUpperCase()}
           </span>
-          <span className={`text-[11px] truncate ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
+          <span className={`text-xs truncate ${isDarkMode ? "text-zinc-400" : "text-slate-500"}`}>
             {config.fileName || block.content?.split("\n")[0]?.slice(0, 60) || "No data"}
           </span>
           {block.content && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0 ml-auto" />}
@@ -235,7 +235,7 @@ export function AIInputBlock({ block, isEditing, isExpanded }: AIInputBlockProps
 
       {/* URL info badge */}
       {config.format !== "file" && /^https?:\/\/\S+$/i.test(block.content.trim()) && (
-        <div className={`flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-md ${
+        <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md ${
           isDarkMode ? "bg-blue-900/30 text-blue-400" : "bg-blue-50 text-blue-600"
         }`}>
           <span>🔗</span>
